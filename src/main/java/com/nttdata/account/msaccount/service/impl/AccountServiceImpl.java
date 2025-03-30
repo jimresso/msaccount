@@ -48,7 +48,7 @@ public class AccountServiceImpl implements AccountService {
         AccountEntity accountEntity = accountConverter.toEntity(account);
         return validateAccountCreation(accountEntity)
                 .flatMap(valid -> {
-                    if (!valid) {
+                    if (Boolean.FALSE.equals(valid)) {
                         logger.warn("the account does not meet the requirements");
                         return Mono.error(new BusinessException("Account creation does not meet business rules"));
                     }
@@ -87,7 +87,7 @@ public class AccountServiceImpl implements AccountService {
                     if (typeChanged || customerTypeChanged) {
                         return validateAccountUpdate(existingAccount, updatedAccountEntity)
                                 .flatMap(isValid -> {
-                                    if (!isValid) {
+                                    if (Boolean.FALSE.equals(isValid)) {
                                         return Mono.error(new BusinessException("Account update does not meet business rules"));
                                     }
                                     return saveUpdatedAccount(existingAccount, updatedAccountEntity);
@@ -126,7 +126,7 @@ public class AccountServiceImpl implements AccountService {
                     AccountEntity.AccountType accountType = accountEntity.getAccountType();
                     if (accountEntity.getCustomerType() == AccountEntity.CustomerType.EMPRESARIAL) {
                         boolean hasHolders = accountEntity.getHolders() != null && !accountEntity.getHolders().isEmpty();
-                        return hasHolders & accountType != AccountEntity.AccountType.AHORRO && accountType != AccountEntity.AccountType.PLAZO_FIJO;
+                        return hasHolders && accountType != AccountEntity.AccountType.AHORRO && accountType != AccountEntity.AccountType.PLAZO_FIJO;
                     }
                     if (accountType == AccountEntity.AccountType.AHORRO || accountType == AccountEntity.AccountType.CORRIENTE) {
                         boolean existsSameType = existingAccounts.stream()
@@ -147,7 +147,7 @@ public class AccountServiceImpl implements AccountService {
                     AccountEntity.AccountType newType = AccountEntity.AccountType.valueOf(updatedAccount.getAccountType().name());
                     if (updatedAccount.getCustomerType() == AccountEntity.CustomerType.EMPRESARIAL) {
                         boolean hasHolders = updatedAccount.getHolders() != null && !updatedAccount.getHolders().isEmpty();
-                        return hasHolders & newType == AccountEntity.AccountType.CORRIENTE;
+                        return hasHolders && newType == AccountEntity.AccountType.CORRIENTE;
                     }
                     if (newType == AccountEntity.AccountType.AHORRO || newType == AccountEntity.AccountType.CORRIENTE) {
                         boolean existsSameType = existingAccounts.stream()
