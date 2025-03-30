@@ -163,7 +163,6 @@
 					</excludes>
 				</configuration>
 			</plugin>
-			<!-- OpenAPI Generator Plugin -->
 			<plugin>
 				<groupId>org.openapitools</groupId>
 				<artifactId>openapi-generator-maven-plugin</artifactId>
@@ -180,8 +179,8 @@
 					<generatorName>spring</generatorName>
 					<output>${project.build.directory}/generated-sources/openapi</output>
 					<configOptions>
-						<reactive>true</reactive>  <!-- Habilita WebFlux -->
-						<interfaceOnly>true</interfaceOnly>  <!-- Genera solo las interfaces de los controladores -->
+						<reactive>true</reactive>
+						<interfaceOnly>true</interfaceOnly>
 						<useJakartaEe>true</useJakartaEe>
 					</configOptions>
 				</configuration>
