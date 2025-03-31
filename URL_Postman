@@ -1,0 +1,50 @@
+[POS] Crear una cuenta bancaria
+http://localhost:8086/api/accounts
+ {
+        "id": "67e874b51f2b8a2546e3ed5c",
+        "customerId": "123412125",
+        "customerType": "EMPRESARIAL",
+        "accountType": "CORRIENTE",
+        "balance": 10000.0,
+        "monthlyLimit": 50000,
+        "lastDepositDate": "2025-03-29",
+        "holders": [
+            "edgar figuera",
+            "favio Aragundi","carlos noriega"
+        ]
+    }
+******************************************************
+[GET] Busca todas las cuentas
+http://localhost:8086/api/accounts
+******************************************************
+[GET]- [ID]: Busca por ID
+http://localhost:8086/api/accounts/{id}
+******************************************************
+[PUT]- [ID]: Actualiza por ID
+http://localhost:8086/api/accounts/{id}
+ {
+     "id": "67e82db111b16856d3db3585",
+    "customerId": "123456",
+    "customerType": "PERSONAL",
+    "accountType": "PLAZO_FIJO",
+    "balance": 10000.0,
+    "monthlyLimit": 7,
+    "lastDepositDate": null,
+    "holders": null
+    }
+******************************************************
+[DELETE]- [ID]: Borra por id
+http://localhost:8086/api/accounts/{id}
+******************************************************
+[PUT] - [ID]: Deposita a la cuenta por {id}
+http://localhost:8086/api/accounts/{id}/deposit
+{
+  "monto": 2000
+}
+******************************************************
+[PUT] - [ID]: Retira a la cuenta por {id}
+http://localhost:8086/api/accounts/67e82db111b16856d3db3585/withdraw
+{
+  "monto": 2000
+}
+

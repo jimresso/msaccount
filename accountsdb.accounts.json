@@ -5,26 +5,15 @@
   "customerId": "123456",
   "customerType": "PERSONAL",
   "accountType": "PLAZO_FIJO",
-  "balance": 1577,
+  "balance": 18200,
   "monthlyLimit": 7,
-  "_class": "com.nttdata.account.msaccount.model.AccountEntity"
-},
-{
-  "_id": {
-    "$oid": "67e8618410295c765de4d4e9"
-  },
-  "customerId": "123456",
-  "customerType": "PERSONAL",
-  "accountType": "CORRIENTE",
-  "balance": 1499,
-  "monthlyLimit": 2,
   "_class": "com.nttdata.account.msaccount.model.AccountEntity"
 },
 {
   "_id": {
     "$oid": "67e874b51f2b8a2546e3ed5c"
   },
-  "customerId": "12345",
+  "customerId": "123412125",
   "customerType": "EMPRESARIAL",
   "accountType": "CORRIENTE",
   "balance": 10000,
@@ -34,7 +23,19 @@
   },
   "holders": [
     "edgar figuera",
-    "favio Aragundi"
+    "favio Aragundi",
+    "carlos noriega"
   ],
+  "_class": "com.nttdata.account.msaccount.model.AccountEntity"
+},
+{
+  "_id": {
+    "$oid": "67e985b6ee26324cfda14b71"
+  },
+  "customerId": "128323574",
+  "customerType": "PERSONAL",
+  "accountType": "AHORRO",
+  "balance": 1100,
+  "monthlyLimit": 2,
   "_class": "com.nttdata.account.msaccount.model.AccountEntity"
 }]
