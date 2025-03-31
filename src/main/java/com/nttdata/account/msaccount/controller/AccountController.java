@@ -4,6 +4,8 @@ import com.nttdata.account.msaccount.service.AccountService;
 import lombok.RequiredArgsConstructor;
 import org.openapitools.api.ApiApi;
 import org.openapitools.model.Account;
+import org.openapitools.model.DepositRequest;
+import org.openapitools.model.WithdrawRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
@@ -44,5 +46,17 @@ public class AccountController implements ApiApi {
         logger.info("Starting deleteAccount Id: {}",id);
         return accountService.removeAccount(id);
     }
+    @Override
+    public Mono<ResponseEntity<Account>> deposit(String id , Mono<DepositRequest> amount, ServerWebExchange exchange) {
+        logger.info("Starting deposit Id: {}",id);
+        return amount.flatMap(a -> accountService.depositAmount(id,a));
+    }
+
+    @Override
+    public Mono<ResponseEntity<Account>> withdraw(String id , Mono<WithdrawRequest> amount, ServerWebExchange exchange) {
+        logger.info("Starting withdraw Id: {}",id);
+        return amount.flatMap(a -> accountService.withdrawAmount(id,a));
+    }
+
 
 }

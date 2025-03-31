@@ -10,9 +10,12 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.openapitools.model.Account;
+import org.openapitools.model.DepositRequest;
+import org.openapitools.model.WithdrawRequest;
 import org.slf4j.Logger;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -425,4 +428,68 @@ class AccountServiceImplTest {
                 )
                 .verifyComplete();
     }
+
+    @Test
+    void depositAmount_Success() {
+        String accountId = "343445454";
+        DepositRequest depositRequest = new DepositRequest().monto(2000.00);
+        AccountEntity accountEntity = new AccountEntity();
+        accountEntity.setId(accountId);
+        accountEntity.setCustomerId("123");
+        accountEntity.setCustomerType(AccountEntity.CustomerType.PERSONAL);
+        accountEntity.setAccountType(AccountEntity.AccountType.AHORRO);
+        accountEntity.setBalance(2000.00);
+        AccountEntity updatedEntity = new AccountEntity();
+        updatedEntity.setId(accountId);
+        updatedEntity.setCustomerId("123");
+        updatedEntity.setCustomerType(AccountEntity.CustomerType.PERSONAL);
+        updatedEntity.setAccountType(AccountEntity.AccountType.AHORRO);
+        updatedEntity.setBalance(accountEntity.getBalance() + depositRequest.getMonto());
+        Account updatedAccount = new Account();
+        updatedAccount.setId(updatedEntity.getId());
+        updatedAccount.setCustomerId(updatedEntity.getCustomerId());
+        updatedAccount.setCustomerType(Account.CustomerTypeEnum.PERSONAL);
+        updatedAccount.setAccountType(Account.AccountTypeEnum.AHORRO);
+        updatedAccount.setBalance(updatedEntity.getBalance());
+        Mockito.when(accountRepository.findById(accountId)).thenReturn(Mono.just(accountEntity));
+        Mockito.when(accountRepository.save(any())).thenReturn(Mono.just(updatedEntity));
+        Mockito.when(accountConverter.toDto(any())).thenReturn(updatedAccount);
+        StepVerifier.create(accountService.depositAmount(accountId, depositRequest))
+                .expectNextMatches(response -> response.getBody().getBalance() == 4000.00) // 2000 + 2000
+                .verifyComplete();
+        Mockito.verify(accountRepository).findById(accountId);
+        Mockito.verify(accountRepository).save(any());
+    }
+    @Test
+    void withdraw_Success() {
+        String accountId = "343445454";
+        WithdrawRequest withdrawRequest = new WithdrawRequest().monto(2000.00);
+        AccountEntity accountEntity = new AccountEntity();
+        accountEntity.setId(accountId);
+        accountEntity.setCustomerId("123");
+        accountEntity.setCustomerType(AccountEntity.CustomerType.PERSONAL);
+        accountEntity.setAccountType(AccountEntity.AccountType.AHORRO);
+        accountEntity.setBalance(2000.00);
+        AccountEntity updatedEntity = new AccountEntity();
+        updatedEntity.setId(accountId);
+        updatedEntity.setCustomerId("123");
+        updatedEntity.setCustomerType(AccountEntity.CustomerType.PERSONAL);
+        updatedEntity.setAccountType(AccountEntity.AccountType.AHORRO);
+        updatedEntity.setBalance(accountEntity.getBalance() - withdrawRequest.getMonto());
+        Account updatedAccount = new Account();
+        updatedAccount.setId(updatedEntity.getId());
+        updatedAccount.setCustomerId(updatedEntity.getCustomerId());
+        updatedAccount.setCustomerType(Account.CustomerTypeEnum.PERSONAL);
+        updatedAccount.setAccountType(Account.AccountTypeEnum.AHORRO);
+        updatedAccount.setBalance(updatedEntity.getBalance());
+        Mockito.when(accountRepository.findById(accountId)).thenReturn(Mono.just(accountEntity));
+        Mockito.when(accountRepository.save(any())).thenReturn(Mono.just(updatedEntity));
+        Mockito.when(accountConverter.toDto(any())).thenReturn(updatedAccount);
+        StepVerifier.create(accountService.withdrawAmount(accountId, withdrawRequest))
+                .expectNextMatches(response -> response.getBody().getBalance() == 0)
+                .verifyComplete();
+        Mockito.verify(accountRepository).findById(accountId);
+        Mockito.verify(accountRepository).save(any());
+    }
+
 }

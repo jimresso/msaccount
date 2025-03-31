@@ -78,34 +78,87 @@ paths:
         '404':
           description: Account not found
     put:
-      summary: "Update an existing account"
-      operationId: "updateAccount"
+      summary: Update an existing account
+      operationId: updateAccount
       tags:
-        - "account"
+        - account
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
       requestBody:
         required: true
         content:
           application/json:
             schema:
               $ref: "#/components/schemas/Account"
-      parameters:
-        - name: "id"
-          in: "path"
-          required: true
-          schema:
-            type: "string"
       responses:
-        "200":
-          description: "Account updated successfully"
+        '200':
+          description: Account updated successfully
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/Account"
-        "404":
-          description: "Account not found"
-        "400":
-          description: "Invalid data"
-
+        '404':
+          description: Account not found
+        '400':
+          description: Invalid data
+  /api/accounts/{id}/deposit:
+    put:
+      summary: Deposit amount into account
+      operationId: deposit
+      tags:
+        - account
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DepositRequest"
+      responses:
+        '200':
+          description: Deposit successful
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Account"
+        '400':
+          description: Invalid data
+  /api/accounts/{id}/withdraw:
+    put:
+      summary: Withdraw amount from account
+      operationId: withdraw
+      tags:
+        - account
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/WithdrawRequest"
+      responses:
+        '200':
+          description: Withdrawal successful
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Account"
+        '400':
+          description: Invalid data
 components:
   schemas:
     Account:
@@ -122,18 +175,34 @@ components:
             - EMPRESARIAL
         accountType:
           type: string
-          enum: ["AHORRO", "CORRIENTE", "PLAZO_FIJO"]
+          enum:
+            - AHORRO
+            - CORRIENTE
+            - PLAZO_FIJO
         balance:
           type: number
           format: double
         monthlyLimit:
           type: integer
-          description: "Only applicable for CORRIENTE accounts"
+          description: Only applicable for CORRIENTE accounts
         lastDepositDate:
           type: string
           format: date
-          description: "Only applicable for PLAZO_FIJO accounts"
+          description: Only applicable for PLAZO_FIJO accounts
         holders:
           type: array
           items:
             type: string
+    DepositRequest:
+      type: object
+      properties:
+        monto:
+          type: number
+          format: double
+    WithdrawRequest:
+      type: object
+      properties:
+        monto:
+          type: number
+          format: double
+

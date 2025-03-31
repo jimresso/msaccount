@@ -3,6 +3,7 @@ package com.nttdata.account.msaccount.service.impl;
 
 import com.nttdata.account.msaccount.exception.BusinessException;
 import com.nttdata.account.msaccount.exception.EntityNotFoundException;
+import com.nttdata.account.msaccount.exception.InsufficientFundsException;
 import com.nttdata.account.msaccount.exception.InternalServerErrorException;
 import com.nttdata.account.msaccount.mapper.AccountConverter;
 import com.nttdata.account.msaccount.model.AccountEntity;
@@ -10,6 +11,8 @@ import com.nttdata.account.msaccount.repository.AccountRepository;
 import com.nttdata.account.msaccount.service.AccountService;
 import lombok.RequiredArgsConstructor;
 import org.openapitools.model.Account;
+import org.openapitools.model.DepositRequest;
+import org.openapitools.model.WithdrawRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
@@ -116,6 +119,45 @@ public class AccountServiceImpl implements AccountService {
                 .onErrorResume(e -> {
                     logger.error("Error retrieving accounts: {}", e.getMessage());
                     return Mono.error(new BusinessException("An error occurred while retrieving accounts"));
+                });
+    }
+
+    @Override
+    public Mono<ResponseEntity<Account>> depositAmount(String id, DepositRequest amount) {
+        return accountRepository.findById(id)
+                .switchIfEmpty(Mono.error(new EntityNotFoundException("Account not found with id: " + id)))
+                .flatMap(existingAccount -> {
+                    logger.warn("Account found: {}", existingAccount.getId());
+                    existingAccount.setBalance(existingAccount.getBalance() + amount.getMonto());
+                    return accountRepository.save(existingAccount);
+                })
+                .map(accountConverter::toDto)
+                .map(ResponseEntity::ok)
+                .doOnSuccess(response -> logger.info("Successful deposit into account {}", id))
+                .onErrorResume(Exception.class, e -> {
+                    logger.error("Unexpected error during deposit: {}", e.getMessage());
+                    return Mono.error(new InternalServerErrorException("Error processing deposit"));
+                });
+    }
+
+    @Override
+    public Mono<ResponseEntity<Account>> withdrawAmount(String id, WithdrawRequest amount) {
+        return accountRepository.findById(id)
+                .switchIfEmpty(Mono.error(new EntityNotFoundException("Account not found with id: " + id)))
+                .flatMap(existingAccount -> {
+                    logger.warn("Account found: {}", existingAccount.getId());
+                    if (existingAccount.getBalance() < amount.getMonto()) {
+                        return Mono.error(new InsufficientFundsException("Insufficient funds in account " + id));
+                    }
+                    existingAccount.setBalance(existingAccount.getBalance() - amount.getMonto());
+                    return accountRepository.save(existingAccount);
+                })
+                .map(accountConverter::toDto)
+                .map(ResponseEntity::ok)
+                .doOnSuccess(response -> logger.info("Successful withdrawal from account {}", id))
+                .onErrorResume(Exception.class, e -> {
+                    logger.error("Unexpected error during withdrawal: {}", e.getMessage());
+                    return Mono.error(new InternalServerErrorException("Error processing withdrawal"));
                 });
     }
 
