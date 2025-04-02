@@ -27,7 +27,7 @@ public class AccountController implements ApiApi {
 
     @Override
     public Mono<ResponseEntity<Account>> getAccountById(String id, ServerWebExchange exchange) {
-        logger.info("Starting get for Account ID:{}",id);
+        logger.info("Starting get for Account ID:{}", id);
         return accountService.findAccountById(id);
     }
     @Override
@@ -37,25 +37,27 @@ public class AccountController implements ApiApi {
     }
     @Override
     public Mono<ResponseEntity<Account>> updateAccount(String id, Mono<Account> account, ServerWebExchange exchange) {
-        logger.info("Starting updateAccount Id: {}",id);
+        logger.info("Starting updateAccount Id: {}", id);
         return account.flatMap(a -> accountService.upgradeAccount(id, a));
     }
 
     @Override
     public Mono<ResponseEntity<Void>> deleteAccount(String id, ServerWebExchange exchange) {
-        logger.info("Starting deleteAccount Id: {}",id);
+        logger.info("Starting deleteAccount Id: {}", id);
         return accountService.removeAccount(id);
     }
     @Override
     public Mono<ResponseEntity<Account>> deposit(String id , Mono<DepositRequest> amount, ServerWebExchange exchange) {
-        logger.info("Starting deposit Id: {}",id);
-        return amount.flatMap(a -> accountService.depositAmount(id,a));
+        logger.info("Starting deposit Id: {}", id);
+        return amount.flatMap(a -> accountService.depositAmount(id, a));
     }
 
     @Override
-    public Mono<ResponseEntity<Account>> withdraw(String id , Mono<WithdrawRequest> amount, ServerWebExchange exchange) {
-        logger.info("Starting withdraw Id: {}",id);
-        return amount.flatMap(a -> accountService.withdrawAmount(id,a));
+    public Mono<ResponseEntity<Account>> withdraw(String id ,
+                                                  Mono<WithdrawRequest> amount,
+                                                  ServerWebExchange exchange) {
+        logger.info("Starting withdraw Id: {}", id);
+        return amount.flatMap(a -> accountService.withdrawAmount(id, a));
     }
 
 

@@ -42,7 +42,9 @@ public class AccountServiceImpl implements AccountService {
                         return Mono.error(e);
                     }
                     logger.error("Error retrieving account with ID {}: {}", id, e.getMessage());
-                    return Mono.error(new InternalServerErrorException("Unexpected error occurred while retrieving account"));
+                    return Mono.error(
+                            new InternalServerErrorException("Unexpected error occurred " +
+                                    "while retrieving account"));
                 });
     }
 
@@ -57,10 +59,15 @@ public class AccountServiceImpl implements AccountService {
                     }
                     return accountRepository.save(accountEntity)
                             .map(accountConverter::toDto)
-                            .map(savedAccount -> ResponseEntity.status(HttpStatus.CREATED).body(savedAccount))
+                            .map(savedAccount ->
+                                    ResponseEntity.status(HttpStatus.CREATED)
+                                            .body(savedAccount))
                             .onErrorResume(e -> {
-                                logger.error("Error saving account for Customer ID: {}. Error: {}", account.getCustomerId(), e.getMessage());
-                                return Mono.error(new InternalServerErrorException("An error occurred while saving the account"));
+                                logger.error("Error saving account for Customer ID: {}. Error: {}",
+                                        account.getCustomerId(), e.getMessage());
+                                return Mono.error(
+                                        new InternalServerErrorException
+                                                ("An error occurred while saving the account"));
                             });
                 });
     }
@@ -81,17 +88,22 @@ public class AccountServiceImpl implements AccountService {
     }
 
     @Override
-    public Mono<ResponseEntity<Account>> upgradeAccount(String accountId, Account updatedAccount) {
+    public Mono<ResponseEntity<Account>> upgradeAccount(String accountId,
+                                                        Account updatedAccount) {
         AccountEntity updatedAccountEntity = accountConverter.toEntity(updatedAccount);
         return accountRepository.findById(accountId)
                 .flatMap(existingAccount -> {
-                    boolean typeChanged = !existingAccount.getAccountType().equals(updatedAccountEntity.getAccountType());
-                    boolean customerTypeChanged = !existingAccount.getCustomerType().equals(updatedAccountEntity.getCustomerType());
+                    boolean typeChanged = !existingAccount.getAccountType()
+                            .equals(updatedAccountEntity.getAccountType());
+                    boolean customerTypeChanged = !existingAccount.getCustomerType()
+                            .equals(updatedAccountEntity.getCustomerType());
                     if (typeChanged || customerTypeChanged) {
                         return validateAccountUpdate(existingAccount, updatedAccountEntity)
                                 .flatMap(isValid -> {
                                     if (Boolean.FALSE.equals(isValid)) {
-                                        return Mono.error(new BusinessException("Account update does not meet business rules"));
+                                        return Mono.error(new
+                                                BusinessException
+                                                ("Account update does not meet business rules"));
                                     }
                                     return saveUpdatedAccount(existingAccount, updatedAccountEntity);
                                 });
@@ -167,10 +179,13 @@ public class AccountServiceImpl implements AccountService {
                 .map(existingAccounts -> {
                     AccountEntity.AccountType accountType = accountEntity.getAccountType();
                     if (accountEntity.getCustomerType() == AccountEntity.CustomerType.EMPRESARIAL) {
-                        boolean hasHolders = accountEntity.getHolders() != null && !accountEntity.getHolders().isEmpty();
-                        return hasHolders && accountType != AccountEntity.AccountType.AHORRO && accountType != AccountEntity.AccountType.PLAZO_FIJO;
+                        boolean hasHolders = accountEntity.getHolders() != null &&
+                                !accountEntity.getHolders().isEmpty();
+                        return hasHolders && accountType != AccountEntity.AccountType.AHORRO &&
+                                accountType != AccountEntity.AccountType.PLAZO_FIJO;
                     }
-                    if (accountType == AccountEntity.AccountType.AHORRO || accountType == AccountEntity.AccountType.CORRIENTE) {
+                    if (accountType == AccountEntity.AccountType.AHORRO ||
+                            accountType == AccountEntity.AccountType.CORRIENTE) {
                         boolean existsSameType = existingAccounts.stream()
                                 .anyMatch(acc -> acc.getAccountType() == accountType);
                         return !existsSameType;
@@ -186,14 +201,18 @@ public class AccountServiceImpl implements AccountService {
         return accountRepository.findByCustomerId(existingAccount.getCustomerId())
                 .collectList()
                 .map(existingAccounts -> {
-                    AccountEntity.AccountType newType = AccountEntity.AccountType.valueOf(updatedAccount.getAccountType().name());
+                    AccountEntity.AccountType newType = AccountEntity.AccountType.valueOf(
+                            updatedAccount.getAccountType().name());
                     if (updatedAccount.getCustomerType() == AccountEntity.CustomerType.EMPRESARIAL) {
-                        boolean hasHolders = updatedAccount.getHolders() != null && !updatedAccount.getHolders().isEmpty();
+                        boolean hasHolders = updatedAccount.getHolders() != null &&
+                                !updatedAccount.getHolders().isEmpty();
                         return hasHolders && newType == AccountEntity.AccountType.CORRIENTE;
                     }
                     if (newType == AccountEntity.AccountType.AHORRO || newType == AccountEntity.AccountType.CORRIENTE) {
                         boolean existsSameType = existingAccounts.stream()
-                                .anyMatch(acc -> acc.getAccountType() == newType && !acc.getId().equals(existingAccount.getId()));
+                                .anyMatch(acc ->
+                                        acc.getAccountType() == newType &&
+                                                !acc.getId().equals(existingAccount.getId()));
                         return !existsSameType;
                     }
                     if (newType == AccountEntity.AccountType.PLAZO_FIJO) {
