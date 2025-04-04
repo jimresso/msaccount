@@ -168,6 +168,8 @@ components:
           type: string
         customerId:
           type: string
+        dni:
+          type: string
         customerType:
           type: string
           enum:
@@ -179,6 +181,11 @@ components:
             - AHORRO
             - CORRIENTE
             - PLAZO_FIJO
+        clientType:
+          type: string
+          enum:
+            - VIP
+            - PYME
         balance:
           type: number
           format: double
@@ -205,4 +212,3 @@ components:
         monto:
           type: number
           format: double
-

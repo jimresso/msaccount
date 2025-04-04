@@ -16,6 +16,7 @@ public class AccountEntity {
 
     @Id
     private String id;
+    private String dni;
     private String customerId;
     private CustomerType customerType;
     private AccountType accountType;
@@ -23,6 +24,7 @@ public class AccountEntity {
     private Integer monthlyLimit;
     private LocalDate lastDepositDate;
     private List<String> holders;
+    private ClientType clientType;
 
     public enum AccountType {
         AHORRO,
@@ -32,5 +34,9 @@ public class AccountEntity {
     public enum CustomerType {
         PERSONAL,
         EMPRESARIAL
+    }
+    public enum ClientType {
+        VIP,
+        PYME,
     }
 }

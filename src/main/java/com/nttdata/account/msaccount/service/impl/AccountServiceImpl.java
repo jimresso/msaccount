@@ -9,25 +9,50 @@ import com.nttdata.account.msaccount.mapper.AccountConverter;
 import com.nttdata.account.msaccount.model.AccountEntity;
 import com.nttdata.account.msaccount.repository.AccountRepository;
 import com.nttdata.account.msaccount.service.AccountService;
+import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import org.openapitools.model.Account;
 import org.openapitools.model.DepositRequest;
 import org.openapitools.model.WithdrawRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
+import java.util.stream.Collectors;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
 public class AccountServiceImpl implements AccountService {
-
+    @Autowired
+    private WebClient.Builder webClientBuilder;
     private final AccountRepository accountRepository;
     private final AccountConverter accountConverter;
     private static final Logger logger = LoggerFactory.getLogger(AccountServiceImpl.class);
+    @Value("${msaccount.amount.mini.vip}")
+    private Double amountMiniVip;
+    @Value("${msaccount.amount.mini.pemy}")
+    private Double amountMinipemy;
+
+    @PostConstruct
+    public void init() {
+        if (webClientBuilder != null) {
+            System.out.println("WebClient.Builder inyectado correctamente.");
+        } else {
+            System.out.println("WebClient.Builder no está inyectado.");
+        }
+    }
+
+
     @Override
     public Mono<ResponseEntity<Account>> findAccountById(String id) {
         return accountRepository.findById(id)
@@ -42,32 +67,61 @@ public class AccountServiceImpl implements AccountService {
                         return Mono.error(e);
                     }
                     logger.error("Error retrieving account with ID {}: {}", id, e.getMessage());
-                    return Mono.error(
-                            new InternalServerErrorException("Unexpected error occurred " +
-                                    "while retrieving account"));
+                    return Mono.error(new InternalServerErrorException("Unexpected error occurred while retrieving account"));
                 });
     }
-
-    @Override
-    public Mono<ResponseEntity<Account>> newAccount(Account account) {
-        AccountEntity accountEntity = accountConverter.toEntity(account);
+@Override
+public Mono<ResponseEntity<Account>> newAccount(Account account) {
+    WebClient webClient = webClientBuilder.build();
+    AccountEntity accountEntity = accountConverter.toEntity(account);
+    if (accountEntity.getClientType() == AccountEntity.ClientType.VIP || accountEntity.getClientType() == AccountEntity.ClientType.PYME) {
+        if (accountEntity.getClientType() == AccountEntity.ClientType.VIP && accountEntity.getBalance() < amountMiniVip) {
+            logger.warn("The initial amount {} is less than the minimum allowed amount of {} for VIP accounts", accountEntity.getBalance(), amountMiniVip);
+            return Mono.error(new BusinessException("The initial amount must be greater than or equal to " + amountMiniVip + " for VIP accounts."));
+        } else if (accountEntity.getClientType() == AccountEntity.ClientType.PYME && accountEntity.getBalance() < amountMinipemy) {
+            logger.warn("The initial amount {} is less than the minimum allowed amount of {} for PYME accounts", accountEntity.getBalance(), amountMinipemy);
+            return Mono.error(new BusinessException("The initial amount must be greater than or equal to " + amountMinipemy + " for PYME accounts."));
+        }
+        return accountRepository.findByDni(account.getDni())
+                .collectList()
+                .flatMap(existingAccounts -> {
+                    List<String> customerIds = existingAccounts.stream()
+                            .map(AccountEntity::getCustomerId)
+                            .collect(Collectors.toList());
+                    Map<String, Object> request = new HashMap<>();
+                    request.put("customerId", customerIds);
+                    return webClient.post()
+                            .uri("http://localhost:8087/creditcards/exists")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .bodyValue(request)
+                            .retrieve()
+                            .bodyToMono(Map.class)
+                            .flatMap(response -> {
+                                Boolean hasCreditCard = (Boolean) response.get("creditCard");
+                                if (Boolean.TRUE.equals(hasCreditCard)) {
+                                    return createAccount(accountEntity);
+                                } else {
+                                    logger.warn("Customer with DNI {} does not have a credit card", account.getDni());
+                                    return Mono.error(new BusinessException("Customer does not have a credit card, cannot create VIP or PYME account"));
+                                }
+                            });
+                });
+    }
+    return createAccount(accountEntity);
+}
+    private Mono<ResponseEntity<Account>> createAccount(AccountEntity accountEntity) {
         return validateAccountCreation(accountEntity)
                 .flatMap(valid -> {
                     if (Boolean.FALSE.equals(valid)) {
-                        logger.warn("the account does not meet the requirements");
+                        logger.warn("The account does not meet the requirements");
                         return Mono.error(new BusinessException("Account creation does not meet business rules"));
                     }
                     return accountRepository.save(accountEntity)
                             .map(accountConverter::toDto)
-                            .map(savedAccount ->
-                                    ResponseEntity.status(HttpStatus.CREATED)
-                                            .body(savedAccount))
+                            .map(savedAccount -> ResponseEntity.status(HttpStatus.CREATED).body(savedAccount))
                             .onErrorResume(e -> {
-                                logger.error("Error saving account for Customer ID: {}. Error: {}",
-                                        account.getCustomerId(), e.getMessage());
-                                return Mono.error(
-                                        new InternalServerErrorException
-                                                ("An error occurred while saving the account"));
+                                logger.error("Error saving account for Customer ID: {}. Error: {}", accountEntity.getCustomerId(), e.getMessage());
+                                return Mono.error(new InternalServerErrorException("An error occurred while saving the account"));
                             });
                 });
     }
@@ -88,22 +142,17 @@ public class AccountServiceImpl implements AccountService {
     }
 
     @Override
-    public Mono<ResponseEntity<Account>> upgradeAccount(String accountId,
-                                                        Account updatedAccount) {
+    public Mono<ResponseEntity<Account>> upgradeAccount(String accountId, Account updatedAccount) {
         AccountEntity updatedAccountEntity = accountConverter.toEntity(updatedAccount);
         return accountRepository.findById(accountId)
                 .flatMap(existingAccount -> {
-                    boolean typeChanged = !existingAccount.getAccountType()
-                            .equals(updatedAccountEntity.getAccountType());
-                    boolean customerTypeChanged = !existingAccount.getCustomerType()
-                            .equals(updatedAccountEntity.getCustomerType());
+                    boolean typeChanged = !existingAccount.getAccountType().equals(updatedAccountEntity.getAccountType());
+                    boolean customerTypeChanged = !existingAccount.getCustomerType().equals(updatedAccountEntity.getCustomerType());
                     if (typeChanged || customerTypeChanged) {
                         return validateAccountUpdate(existingAccount, updatedAccountEntity)
                                 .flatMap(isValid -> {
                                     if (Boolean.FALSE.equals(isValid)) {
-                                        return Mono.error(new
-                                                BusinessException
-                                                ("Account update does not meet business rules"));
+                                        return Mono.error(new BusinessException("Account update does not meet business rules"));
                                     }
                                     return saveUpdatedAccount(existingAccount, updatedAccountEntity);
                                 });
@@ -179,13 +228,10 @@ public class AccountServiceImpl implements AccountService {
                 .map(existingAccounts -> {
                     AccountEntity.AccountType accountType = accountEntity.getAccountType();
                     if (accountEntity.getCustomerType() == AccountEntity.CustomerType.EMPRESARIAL) {
-                        boolean hasHolders = accountEntity.getHolders() != null &&
-                                !accountEntity.getHolders().isEmpty();
-                        return hasHolders && accountType != AccountEntity.AccountType.AHORRO &&
-                                accountType != AccountEntity.AccountType.PLAZO_FIJO;
+                        boolean hasHolders = accountEntity.getHolders() != null && !accountEntity.getHolders().isEmpty();
+                        return hasHolders && accountType != AccountEntity.AccountType.AHORRO && accountType != AccountEntity.AccountType.PLAZO_FIJO;
                     }
-                    if (accountType == AccountEntity.AccountType.AHORRO ||
-                            accountType == AccountEntity.AccountType.CORRIENTE) {
+                    if (accountType == AccountEntity.AccountType.AHORRO || accountType == AccountEntity.AccountType.CORRIENTE) {
                         boolean existsSameType = existingAccounts.stream()
                                 .anyMatch(acc -> acc.getAccountType() == accountType);
                         return !existsSameType;
@@ -201,18 +247,14 @@ public class AccountServiceImpl implements AccountService {
         return accountRepository.findByCustomerId(existingAccount.getCustomerId())
                 .collectList()
                 .map(existingAccounts -> {
-                    AccountEntity.AccountType newType = AccountEntity.AccountType.valueOf(
-                            updatedAccount.getAccountType().name());
+                    AccountEntity.AccountType newType = AccountEntity.AccountType.valueOf(updatedAccount.getAccountType().name());
                     if (updatedAccount.getCustomerType() == AccountEntity.CustomerType.EMPRESARIAL) {
-                        boolean hasHolders = updatedAccount.getHolders() != null &&
-                                !updatedAccount.getHolders().isEmpty();
+                        boolean hasHolders = updatedAccount.getHolders() != null && !updatedAccount.getHolders().isEmpty();
                         return hasHolders && newType == AccountEntity.AccountType.CORRIENTE;
                     }
                     if (newType == AccountEntity.AccountType.AHORRO || newType == AccountEntity.AccountType.CORRIENTE) {
                         boolean existsSameType = existingAccounts.stream()
-                                .anyMatch(acc ->
-                                        acc.getAccountType() == newType &&
-                                                !acc.getId().equals(existingAccount.getId()));
+                                .anyMatch(acc -> acc.getAccountType() == newType && !acc.getId().equals(existingAccount.getId()));
                         return !existsSameType;
                     }
                     if (newType == AccountEntity.AccountType.PLAZO_FIJO) {
