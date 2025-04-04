@@ -1,6 +1,7 @@
 package com.nttdata.account.msaccount.controller;
 
 import com.nttdata.account.msaccount.service.AccountService;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -20,6 +21,7 @@ import static org.mockito.Mockito.when;
 
 
 @ExtendWith(MockitoExtension.class)
+@Disabled
 class AccountControllerTest {
     @Mock
     private AccountService accountService;

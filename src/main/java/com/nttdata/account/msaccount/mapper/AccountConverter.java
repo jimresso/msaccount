@@ -9,6 +9,7 @@ import org.openapitools.model.Account;
 public interface AccountConverter {
 
     @Mapping(target = "id", source = "id")
+    @Mapping(target = "dni", source = "dni")
     @Mapping(target = "customerId", source = "customerId")
     @Mapping(target = "customerType", source = "customerType")
     @Mapping(target = "accountType", source = "accountType")
@@ -16,9 +17,11 @@ public interface AccountConverter {
     @Mapping(target = "monthlyLimit", source = "monthlyLimit")
     @Mapping(target = "lastDepositDate", source = "lastDepositDate")
     @Mapping(target = "holders", source = "holders")
+    @Mapping(target = "clientType", source = "clientType")
     AccountEntity toEntity(Account account);
 
     @Mapping(target = "id", source = "id")
+    @Mapping(target = "dni", source = "dni")
     @Mapping(target = "customerId", source = "customerId")
     @Mapping(target = "customerType", source = "customerType")
     @Mapping(target = "accountType", source = "accountType")
@@ -26,5 +29,6 @@ public interface AccountConverter {
     @Mapping(target = "monthlyLimit", source = "monthlyLimit")
     @Mapping(target = "lastDepositDate", source = "lastDepositDate")
     @Mapping(target = "holders", source = "holders")
+    @Mapping(target = "clientType", source = "clientType")
     Account toDto(AccountEntity accountEntity);
 }

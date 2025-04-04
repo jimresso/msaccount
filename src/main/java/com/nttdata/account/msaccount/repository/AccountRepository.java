@@ -7,4 +7,6 @@ import reactor.core.publisher.Flux;
 public interface AccountRepository extends ReactiveMongoRepository<AccountEntity, String> {
 
     Flux<AccountEntity> findByCustomerId(String customerId);
+
+    Flux<AccountEntity> findByDni(String dni);
 }
