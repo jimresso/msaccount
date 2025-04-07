@@ -218,27 +218,28 @@ public Mono<ResponseEntity<Account>> newAccount(Account account) {
                                         double commissionAmount = commission.getMonto() != null
                                                 ? commission.getMonto().doubleValue() : 0.0;
                                         double netAmount;
+                                        double taxes;
                                         double acountLimit = accountOrigin .getLimitTransaction();
                                         if ( accountOrigin.getBalance() < amount.getMonto() ) {
                                             return Mono.error(new BusinessException("insufficient balance"));
-                                        } else {
-                                            accountOrigin.setBalance(accountOrigin.getBalance() - amount.getMonto());
-                                            accountOrigin .setLimitTransaction(++acountLimit);
                                         }
                                         if (accountOrigin .getLimitTransaction() > limit) {
                                             netAmount = amount.getMonto() - commissionAmount;
+
                                             if (netAmount < 0) {
                                                 return Mono.error(
                                                         new BusinessException("Net deposit amount cannot be negative"));
                                             }
+                                            taxes = commission.getMonto();
                                             accountOrigin.setBalance(accountOrigin.getBalance() - netAmount);
-                                            acountDestination .setBalance(acountDestination .getBalance() + netAmount);
+                                            acountDestination.setBalance(acountDestination .getBalance() + netAmount);
                                         } else {
-                                            netAmount = 0;
+                                            taxes = 0;
                                             accountOrigin.setBalance(accountOrigin.getBalance() - amount.getMonto());
                                             acountDestination .setBalance(acountDestination .getBalance() +
                                                     amount.getMonto());
                                         }
+                                        accountOrigin .setLimitTransaction(++acountLimit);
                                         return accountRepository.save(acountDestination )
                                                 .flatMap(savedAccount -> {
                                                     TransactionDTO transactionDTO = new TransactionDTO();
@@ -247,7 +248,7 @@ public Mono<ResponseEntity<Account>> newAccount(Account account) {
                                                             TransactionDTO.TransactionType.DEPOSITO);
                                                     transactionDTO.setTransactionDate(LocalDate.now());
                                                     transactionDTO.setCustomerIdOrigin(accountOrigin .getCustomerId());
-                                                    transactionDTO.setCommissionAmount(netAmount);
+                                                    transactionDTO.setCommissionAmount(taxes);
                                                     transactionDTO.setCustomerIdDestination(
                                                             acountDestination.getCustomerId());
                                                     return transactionRepository.save(transactionDTO)
@@ -272,9 +273,45 @@ public Mono<ResponseEntity<Account>> newAccount(Account account) {
                 .switchIfEmpty(Mono.error(new EntityNotFoundException("Account not found with id: " + id)))
                 .flatMap(existingAccount -> {
                     logger.warn("Account found: {}", existingAccount.getId());
+                    return comissionRepository.findByAccountType(existingAccount.getAccountType().name())
+                            .defaultIfEmpty(new TaxedTransactionLimitDTO())
+                            .flatMap(commission->{
+                                double commissionAmount = commission.getMonto() != null
+                                        ? commission.getMonto().doubleValue() : 0.0;
+                                double netAmount;
+                                double taxes;
+                                double acountLimit = existingAccount.getLimitTransaction();
+                                if ( existingAccount.getBalance() < amount.getMonto() ) {
+                                    return Mono.error(new BusinessException("insufficient balance"));
+                                }
+                                if (existingAccount.getLimitTransaction() > limit) {
+                                    netAmount = amount.getMonto() - commissionAmount;
+                                    if (netAmount < 0) {
+                                        return Mono.error(
+                                                new BusinessException("Net deposit amount cannot be negative"));
+                                    }
+                                    taxes =commission.getMonto();
+                                    existingAccount.setBalance(existingAccount.getBalance() - netAmount);
+                                } else {
+                                    taxes = 0;
+                                    existingAccount.setBalance(existingAccount.getBalance() - amount.getMonto());
+                                }
+                                existingAccount.setLimitTransaction(++acountLimit);
+                                return accountRepository.save( existingAccount )
+                                        .flatMap(savedAccount -> {
+                                            TransactionDTO transactionDTO = new TransactionDTO();
+                                            transactionDTO.setAmount(amount.getMonto());
+                                            transactionDTO.setTransactionType(
+                                                    TransactionDTO.TransactionType.RETIRO);
+                                            transactionDTO.setTransactionDate(LocalDate.now());
+                                            transactionDTO.setCustomerIdOrigin(existingAccount.getCustomerId());
+                                            transactionDTO.setCommissionAmount(taxes);
+                                            transactionDTO.setCustomerIdDestination(null);
+                                            return transactionRepository.save(transactionDTO)
+                                                    .thenReturn(existingAccount);
+                                        });
 
-
-                    return accountRepository.save(existingAccount);
+                            });
                 })
                 .map(accountConverter::toDto)
                 .map(ResponseEntity::ok)
