@@ -2,6 +2,7 @@ package com.nttdata.account.msaccount.service.impl;
 
 
 import com.nttdata.account.msaccount.controller.AccountController;
+import com.nttdata.account.msaccount.exception.BusinessException;
 import com.nttdata.account.msaccount.model.TransactionDTO;
 import com.nttdata.account.msaccount.repository.TransactionRepository;
 import com.nttdata.account.msaccount.service.ReportAccountService;
@@ -29,13 +30,13 @@ public class ReportAccountServiceImpl implements ReportAccountService {
         YearMonth currentMonth = YearMonth.now();
         LocalDate startOfMonth = currentMonth.atDay(1);
         LocalDate endOfMonth = currentMonth.atEndOfMonth();
-
         return transactionRepository.findByDni(request)
                 .filter(transaction -> {
                     LocalDate txDate = transaction.getTransactionDate();
                     return !txDate.isBefore(startOfMonth) && !txDate.isAfter(endOfMonth);
                 })
                 .map(TransactionDTO::getAmount)
+                .switchIfEmpty(Mono.error(new BusinessException("No transactions found for current month")))
                 .reduce(0.0, Double::sum)
                 .map(totalAmount -> {
                     double averageDailyBalance = totalAmount / currentMonth.lengthOfMonth();
@@ -44,6 +45,14 @@ public class ReportAccountServiceImpl implements ReportAccountService {
                     response.setAmount(averageDailyBalance);
                     response.setReportDate(LocalDate.now());
                     return ResponseEntity.ok(response);
+                })
+                .onErrorResume(ex -> {
+                    if (ex instanceof BusinessException) {
+                        logger.warn("Business error: {}", ex.getMessage());
+                        return Mono.just(ResponseEntity.badRequest().build());
+                    }
+                    logger.error("Internal error generating the report: {}", ex.getMessage(), ex);
+                    return Mono.just(ResponseEntity.internalServerError().build());
                 });
     }
 
