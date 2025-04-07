@@ -50,14 +50,6 @@ public class AccountServiceImpl implements AccountService {
     private Double amountMinipemy;
     @Value("${limit.transaction}")
     private int limit;
-    @PostConstruct
-    public void init() {
-        if (webClientBuilder != null) {
-            System.out.println("WebClient.Builder inyectado correctamente.");
-        } else {
-            System.out.println("WebClient.Builder no está inyectado.");
-        }
-    }
 
 
     @Override
@@ -84,6 +76,7 @@ public Mono<ResponseEntity<Account>> newAccount(Account account) {
     AccountEntityDTO accountEntityDTO = accountConverter.toEntity(account);
     if (accountEntityDTO.getClientType() == AccountEntityDTO.ClientType.VIP ||
             accountEntityDTO.getClientType() == AccountEntityDTO.ClientType.PYME) {
+
         if (accountEntityDTO.getClientType() == AccountEntityDTO.ClientType.VIP &&
                 accountEntityDTO.getBalance() < amountMiniVip) {
             logger.warn("The initial amount {} is less than the minimum allowed " +
@@ -249,6 +242,7 @@ public Mono<ResponseEntity<Account>> newAccount(Account account) {
                                                     transactionDTO.setTransactionDate(LocalDate.now());
                                                     transactionDTO.setCustomerIdOrigin(accountOrigin .getCustomerId());
                                                     transactionDTO.setCommissionAmount(taxes);
+                                                    transactionDTO.setDni(accountOrigin.getDni());
                                                     transactionDTO.setCustomerIdDestination(
                                                             acountDestination.getCustomerId());
                                                     return transactionRepository.save(transactionDTO)
@@ -306,6 +300,7 @@ public Mono<ResponseEntity<Account>> newAccount(Account account) {
                                             transactionDTO.setTransactionDate(LocalDate.now());
                                             transactionDTO.setCustomerIdOrigin(existingAccount.getCustomerId());
                                             transactionDTO.setCommissionAmount(taxes);
+                                            transactionDTO.setDni(existingAccount.getDni());
                                             transactionDTO.setCustomerIdDestination(null);
                                             return transactionRepository.save(transactionDTO)
                                                     .thenReturn(existingAccount);

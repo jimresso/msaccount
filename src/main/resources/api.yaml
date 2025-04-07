@@ -244,6 +244,25 @@ paths:
         '404':
           description: commission not found
 
+  /report/operations:
+    post:
+      operationId: reportOperations
+      tags:
+        - report
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ReportOperationsRequest"
+      responses:
+        '200':
+          description: Single account operation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReportOperationsResponse"
+
 components:
   schemas:
     Account:
@@ -318,3 +337,22 @@ components:
         monto:
           type: number
           format: double
+
+    ReportOperationsResponse:
+      type: object
+      properties:
+        customerId:
+          type: string
+        amount:
+          type: number
+          format: double
+        reportDate:
+          type: string
+          format: date
+
+    ReportOperationsRequest:
+      type: object
+      properties:
+        dni:
+          type: string
+
