@@ -1,6 +1,6 @@
 package com.nttdata.account.msaccount.mapper;
 
-import com.nttdata.account.msaccount.model.AccountEntity;
+import com.nttdata.account.msaccount.model.AccountEntityDTO;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.openapitools.model.Account;
@@ -17,8 +17,9 @@ public interface AccountConverter {
     @Mapping(target = "monthlyLimit", source = "monthlyLimit")
     @Mapping(target = "lastDepositDate", source = "lastDepositDate")
     @Mapping(target = "holders", source = "holders")
+    @Mapping(target = "limitTransaction", source = "limitTransaction")
     @Mapping(target = "clientType", source = "clientType")
-    AccountEntity toEntity(Account account);
+    AccountEntityDTO toEntity(Account account);
 
     @Mapping(target = "id", source = "id")
     @Mapping(target = "dni", source = "dni")
@@ -29,6 +30,7 @@ public interface AccountConverter {
     @Mapping(target = "monthlyLimit", source = "monthlyLimit")
     @Mapping(target = "lastDepositDate", source = "lastDepositDate")
     @Mapping(target = "holders", source = "holders")
+    @Mapping(target = "limitTransaction", source = "limitTransaction")
     @Mapping(target = "clientType", source = "clientType")
-    Account toDto(AccountEntity accountEntity);
+    Account toDto(AccountEntityDTO accountEntityDTO);
 }

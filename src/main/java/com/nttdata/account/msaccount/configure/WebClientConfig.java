@@ -10,6 +10,9 @@ import org.springframework.web.reactive.function.client.WebClient;
 public class WebClientConfig {
     @Bean
     public WebClient.Builder webClientBuilder() {
-        return WebClient.builder();
+
+        return WebClient.builder()
+                .baseUrl("http://localhost:8087/creditcards/exists")
+                .defaultHeader("Content-Type", "application/json");
     }
 }
