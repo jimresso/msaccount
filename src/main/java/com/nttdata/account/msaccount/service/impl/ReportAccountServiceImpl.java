@@ -41,7 +41,7 @@ public class ReportAccountServiceImpl implements ReportAccountService {
                 .map(totalAmount -> {
                     double averageDailyBalance = totalAmount / currentMonth.lengthOfMonth();
                     ReportOperationsResponse response = new ReportOperationsResponse();
-                    response.setCustomerId(request);
+                    response.setDni(request);
                     response.setAmount(averageDailyBalance);
                     response.setReportDate(LocalDate.now());
                     return ResponseEntity.ok(response);

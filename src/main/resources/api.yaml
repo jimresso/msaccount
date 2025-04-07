@@ -341,7 +341,7 @@ components:
     ReportOperationsResponse:
       type: object
       properties:
-        customerId:
+        dni:
           type: string
         amount:
           type: number
@@ -355,4 +355,3 @@ components:
       properties:
         dni:
           type: string
-
