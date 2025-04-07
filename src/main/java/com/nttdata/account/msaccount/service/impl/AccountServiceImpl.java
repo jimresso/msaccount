@@ -275,7 +275,7 @@ public Mono<ResponseEntity<Account>> newAccount(Account account) {
                     logger.warn("Account found: {}", existingAccount.getId());
                     return comissionRepository.findByAccountType(existingAccount.getAccountType().name())
                             .defaultIfEmpty(new TaxedTransactionLimitDTO())
-                            .flatMap(commission->{
+                            .flatMap(commission -> {
                                 double commissionAmount = commission.getMonto() != null
                                         ? commission.getMonto().doubleValue() : 0.0;
                                 double netAmount;
@@ -290,7 +290,7 @@ public Mono<ResponseEntity<Account>> newAccount(Account account) {
                                         return Mono.error(
                                                 new BusinessException("Net deposit amount cannot be negative"));
                                     }
-                                    taxes =commission.getMonto();
+                                    taxes = commission.getMonto();
                                     existingAccount.setBalance(existingAccount.getBalance() - netAmount);
                                 } else {
                                     taxes = 0;
