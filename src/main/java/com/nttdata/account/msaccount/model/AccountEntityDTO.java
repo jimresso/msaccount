@@ -12,10 +12,11 @@ import java.util.List;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class AccountEntity {
+public class AccountEntityDTO {
 
     @Id
     private String id;
+    private String dni;
     private String customerId;
     private CustomerType customerType;
     private AccountType accountType;
@@ -23,6 +24,8 @@ public class AccountEntity {
     private Integer monthlyLimit;
     private LocalDate lastDepositDate;
     private List<String> holders;
+    private Double limitTransaction;
+    private ClientType clientType;
 
     public enum AccountType {
         AHORRO,
@@ -32,5 +35,9 @@ public class AccountEntity {
     public enum CustomerType {
         PERSONAL,
         EMPRESARIAL
+    }
+    public enum ClientType {
+        VIP,
+        PYME,
     }
 }

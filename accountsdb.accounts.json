@@ -1,0 +1,32 @@
+[{
+  "_id": {
+    "$oid": "67f1351ffe8f9a1bca7468f5"
+  },
+  "dni": "676789456",
+  "customerId": "456264",
+  "customerType": "PERSONAL",
+  "accountType": "CORRIENTE",
+  "balance": 3800,
+  "monthlyLimit": 50000,
+  "lastDepositDate": {
+    "$date": "2025-03-29T05:00:00.000Z"
+  },
+  "limitTransaction": 3,
+  "_class": "com.nttdata.account.msaccount.model.AccountEntityDTO"
+},
+{
+  "_id": {
+    "$oid": "67f30a119fbcc57548bd3ede"
+  },
+  "dni": "676789456",
+  "customerId": "55887446",
+  "customerType": "PERSONAL",
+  "accountType": "AHORRO",
+  "balance": 1700,
+  "monthlyLimit": 50000,
+  "lastDepositDate": {
+    "$date": "2025-03-29T05:00:00.000Z"
+  },
+  "limitTransaction": 15,
+  "_class": "com.nttdata.account.msaccount.model.AccountEntityDTO"
+}]

@@ -159,6 +159,131 @@ paths:
                 $ref: "#/components/schemas/Account"
         '400':
           description: Invalid data
+
+  /commission/{accountType}:
+    put:
+      summary: Withdraw amount from commission
+      operationId: commission
+      tags:
+        - commission
+      parameters:
+        - name: accountType
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/taxedTransactionLimit"
+      responses:
+        '200':
+          description: commission update
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/taxedTransactionLimit"
+        '400':
+          description: Invalid data
+
+  /commission:
+    post:
+      summary: Withdraw amount from commission
+      operationId: createCommission
+      tags:
+        - commission
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/taxedTransactionLimit"
+      responses:
+        '200':
+          description: commission created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/taxedTransactionLimit"
+        '400':
+          description: Invalid data
+
+  /commission/findallcommission:
+    get:
+      summary: all commission
+      operationId: getCommission
+      tags:
+        - commission
+      responses:
+        '200':
+          description: List of accounts
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/taxedTransactionLimit"
+
+  /commission/{id}:
+    delete:
+      summary: Delete an account
+      operationId: deleteCommission
+      tags:
+        - commission
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: commission deleted successfully
+        '404':
+          description: commission not found
+
+  /report/operations:
+    post:
+      operationId: reportOperations
+      tags:
+        - report
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ReportOperationsRequest"
+      responses:
+        '200':
+          description: Single account operation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReportOperationsResponse"
+
+  /report/product/operations:
+    post:
+      operationId: reportProduct
+      tags:
+        - report
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ReportProductoRequest"
+      responses:
+        '200':
+          description: Single account operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ReportProductoResponse"
+
 components:
   schemas:
     Account:
@@ -167,6 +292,8 @@ components:
         id:
           type: string
         customerId:
+          type: string
+        dni:
           type: string
         customerType:
           type: string
@@ -179,6 +306,11 @@ components:
             - AHORRO
             - CORRIENTE
             - PLAZO_FIJO
+        clientType:
+          type: string
+          enum:
+            - VIP
+            - PYME
         balance:
           type: number
           format: double
@@ -193,9 +325,15 @@ components:
           type: array
           items:
             type: string
+        limitTransaction:
+          type: number
+          format: double
+
     DepositRequest:
       type: object
       properties:
+        customerId:
+          type: string
         monto:
           type: number
           format: double
@@ -206,3 +344,55 @@ components:
           type: number
           format: double
 
+    taxedTransactionLimit:
+      type: object
+      properties:
+        id:
+          type: string
+        accountType:
+          type: string
+          enum:
+            - AHORRO
+            - CORRIENTE
+            - PLAZO_FIJO
+        monto:
+          type: number
+          format: double
+
+    ReportOperationsResponse:
+      type: object
+      properties:
+        dni:
+          type: string
+        amount:
+          type: number
+          format: double
+        reportDate:
+          type: string
+          format: date
+
+    ReportOperationsRequest:
+      type: object
+      properties:
+        dni:
+          type: string
+
+    ReportProductoResponse:
+      type: object
+      properties:
+        accountType:
+          type: string
+        customerId:
+          type: string
+        commissionAmount:
+          type: number
+          format: double
+    ReportProductoRequest:
+      type: object
+      properties:
+        startDate:
+          type: string
+          format: date
+        endDate:
+          type: string
+          format: date

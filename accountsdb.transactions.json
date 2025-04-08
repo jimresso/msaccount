@@ -1,0 +1,44 @@
+[{
+  "_id": {
+    "$oid": "67f40d97fc97bc37e39e3840"
+  },
+  "dni": "676789456",
+  "customerIdOrigin": "456264",
+  "customerIdDestination": "55887446",
+  "amount": 300,
+  "transactionDate": {
+    "$date": "2025-04-07T05:00:00.000Z"
+  },
+  "transactionType": "DEPOSITO",
+  "commissionAmount": 0,
+  "_class": "com.nttdata.account.msaccount.model.TransactionDTO"
+},
+{
+  "_id": {
+    "$oid": "67f40e1bfc97bc37e39e3842"
+  },
+  "dni": "676789456",
+  "customerIdOrigin": "456264",
+  "customerIdDestination": "55887446",
+  "amount": 1000,
+  "transactionDate": {
+    "$date": "2025-04-07T05:00:00.000Z"
+  },
+  "transactionType": "DEPOSITO",
+  "commissionAmount": 200,
+  "_class": "com.nttdata.account.msaccount.model.TransactionDTO"
+},
+{
+  "_id": {
+    "$oid": "67f40f33ac048b71c75fbd09"
+  },
+  "dni": "676789456",
+  "customerIdOrigin": "55887446",
+  "amount": 500,
+  "transactionDate": {
+    "$date": "2025-04-07T05:00:00.000Z"
+  },
+  "transactionType": "RETIRO",
+  "commissionAmount": 200,
+  "_class": "com.nttdata.account.msaccount.model.TransactionDTO"
+}]

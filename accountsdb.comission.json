@@ -1,0 +1,16 @@
+[{
+  "_id": {
+    "$oid": "67f286b567330e01e36de0df"
+  },
+  "accountType": "AHORRO",
+  "monto": 200,
+  "_class": "com.nttdata.account.msaccount.model.TaxedTransactionLimitDTO"
+},
+{
+  "_id": {
+    "$oid": "67f2870067330e01e36de0e0"
+  },
+  "accountType": "CORRIENTE",
+  "monto": 200,
+  "_class": "com.nttdata.account.msaccount.model.TaxedTransactionLimitDTO"
+}]

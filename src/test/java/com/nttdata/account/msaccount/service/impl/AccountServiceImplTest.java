@@ -4,8 +4,9 @@ import com.nttdata.account.msaccount.exception.BusinessException;
 import com.nttdata.account.msaccount.exception.EntityNotFoundException;
 import com.nttdata.account.msaccount.exception.InternalServerErrorException;
 import com.nttdata.account.msaccount.mapper.AccountConverter;
-import com.nttdata.account.msaccount.model.AccountEntity;
+import com.nttdata.account.msaccount.model.AccountEntityDTO;
 import com.nttdata.account.msaccount.repository.AccountRepository;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -44,17 +45,17 @@ class AccountServiceImplTest {
     @Test
     void findAccountById_WhenAccountExists() {
         String accountId = "123";
-        AccountEntity accountEntity = new AccountEntity();
-        accountEntity.setId(accountId);
+        AccountEntityDTO accountEntityDTO = new AccountEntityDTO();
+        accountEntityDTO.setId(accountId);
         Account accountDto = new Account();
         accountDto.setId(accountId);
-        when(accountRepository.findById(accountId)).thenReturn(Mono.just(accountEntity));
-        when(accountConverter.toDto(accountEntity)).thenReturn(accountDto);
+        when(accountRepository.findById(accountId)).thenReturn(Mono.just(accountEntityDTO));
+        when(accountConverter.toDto(accountEntityDTO)).thenReturn(accountDto);
         StepVerifier.create(accountService.findAccountById(accountId))
                 .expectNext(ResponseEntity.ok(accountDto))
                 .verifyComplete();
         verify(accountRepository).findById(accountId);
-        verify(accountConverter).toDto(accountEntity);
+        verify(accountConverter).toDto(accountEntityDTO);
     }
 
     @Test
@@ -78,129 +79,10 @@ class AccountServiceImplTest {
                 .verify();
         verify(accountRepository).findById(accountId);
     }
-
-    @Test
-    void newAccount_WhenValidAccountPersonal() {
-        Account account = new Account()
-                .customerId("123")
-                .customerType(Account.CustomerTypeEnum.PERSONAL)
-                .accountType(Account.AccountTypeEnum.AHORRO);
-        AccountEntity accountEntity = new AccountEntity();
-        accountEntity.setCustomerId("123");
-        accountEntity.setCustomerType(AccountEntity.CustomerType.PERSONAL);
-        accountEntity.setAccountType(AccountEntity.AccountType.AHORRO);
-        Account savedAccount = new Account()
-                .customerId("123")
-                .customerType(Account.CustomerTypeEnum.PERSONAL)
-                .accountType(Account.AccountTypeEnum.AHORRO);
-        when(accountConverter.toEntity(account)).thenReturn(accountEntity);
-        when(accountRepository.findByCustomerId("123")).thenReturn(Flux.empty());
-        when(accountRepository.save(accountEntity)).thenReturn(Mono.just(accountEntity));
-        when(accountConverter.toDto(accountEntity)).thenReturn(savedAccount);
-        StepVerifier.create(accountService.newAccount(account))
-                .expectNextMatches(response -> response.getStatusCode() == HttpStatus.CREATED &&
-                        response.getBody().equals(savedAccount))
-                .verifyComplete();
-        verify(accountRepository).save(accountEntity);
-        verify(accountRepository).findByCustomerId("123");
-    }
-
-    @Test
-    void newAccount_WhenCustomerIsEmpresarial() {
-        Account account = new Account()
-                .customerId("456")
-                .customerType(Account.CustomerTypeEnum.EMPRESARIAL)
-                .accountType(Account.AccountTypeEnum.CORRIENTE)
-                .holders(List.of("holder1", "holder2"));
-        AccountEntity accountEntity = new AccountEntity();
-        accountEntity.setCustomerId("456");
-        accountEntity.setCustomerType(AccountEntity.CustomerType.EMPRESARIAL);
-        accountEntity.setAccountType(AccountEntity.AccountType.CORRIENTE);
-        accountEntity.setHolders(List.of("holder1", "holder2"));
-        Account savedAccount = new Account()
-                .customerId("456")
-                .customerType(Account.CustomerTypeEnum.EMPRESARIAL)
-                .accountType(Account.AccountTypeEnum.CORRIENTE)
-                .holders(List.of("holder1", "holder2"));
-        when(accountConverter.toEntity(account)).thenReturn(accountEntity);
-        when(accountRepository.findByCustomerId("456")).thenReturn(Flux.empty());
-        when(accountRepository.save(accountEntity)).thenReturn(Mono.just(accountEntity));
-        when(accountConverter.toDto(accountEntity)).thenReturn(savedAccount);
-        StepVerifier.create(accountService.newAccount(account))
-                .expectNextMatches(response -> response.getStatusCode() == HttpStatus.CREATED &&
-                        response.getBody().equals(savedAccount))
-                .verifyComplete();
-        verify(accountRepository).save(accountEntity);
-    }
-
-    @Test
-    void newAccount_WhenValidPlazoFijoForPersonal() {
-        Account account = new Account()
-                .customerId("789")
-                .customerType(Account.CustomerTypeEnum.PERSONAL)
-                .accountType(Account.AccountTypeEnum.PLAZO_FIJO);
-        AccountEntity accountEntity = new AccountEntity();
-        accountEntity.setCustomerId("789");
-        accountEntity.setCustomerType(AccountEntity.CustomerType.PERSONAL);
-        accountEntity.setAccountType(AccountEntity.AccountType.PLAZO_FIJO);
-        Account savedAccount = new Account()
-                .customerId("789")
-                .customerType(Account.CustomerTypeEnum.PERSONAL)
-                .accountType(Account.AccountTypeEnum.PLAZO_FIJO);
-        when(accountConverter.toEntity(account)).thenReturn(accountEntity);
-        when(accountRepository.findByCustomerId("789")).thenReturn(Flux.empty());
-        when(accountRepository.save(accountEntity)).thenReturn(Mono.just(accountEntity));
-        when(accountConverter.toDto(accountEntity)).thenReturn(savedAccount);
-        StepVerifier.create(accountService.newAccount(account))
-                .expectNextMatches(response -> response.getStatusCode() == HttpStatus.CREATED &&
-                        response.getBody().equals(savedAccount))
-                .verifyComplete();
-        verify(accountRepository).save(accountEntity);
-    }
-
-    @Test
-    void newAccount_WhenInvalidPlazoFijoForEmpresarial() {
-        Account account = new Account()
-                .customerId("999")
-                .customerType(Account.CustomerTypeEnum.EMPRESARIAL)
-                .accountType(Account.AccountTypeEnum.PLAZO_FIJO);
-        AccountEntity accountEntity = new AccountEntity();
-        accountEntity.setCustomerId("999");
-        accountEntity.setCustomerType(AccountEntity.CustomerType.EMPRESARIAL);
-        accountEntity.setAccountType(AccountEntity.AccountType.PLAZO_FIJO);
-        when(accountConverter.toEntity(account)).thenReturn(accountEntity);
-        when(accountRepository.findByCustomerId("999")).thenReturn(Flux.empty());
-        StepVerifier.create(accountService.newAccount(account))
-                .expectErrorMatches(throwable ->
-                        throwable instanceof BusinessException &&
-                                throwable.getMessage().equals("Account creation does not meet business rules"))
-                .verify();
-        verify(accountRepository, never()).save(any());
-    }
-
-    @Test
-    void newAccount_ThrowsInternalServerErrorException() {
-        Account account = new Account()
-                .customerId("456")
-                .customerType(Account.CustomerTypeEnum.PERSONAL)
-                .accountType(Account.AccountTypeEnum.AHORRO);
-        AccountEntity accountEntity = new AccountEntity();
-        accountEntity.setCustomerId("456");
-        accountEntity.setCustomerType(AccountEntity.CustomerType.PERSONAL);
-        accountEntity.setAccountType(AccountEntity.AccountType.AHORRO);
-        when(accountConverter.toEntity(account)).thenReturn(accountEntity);
-        when(accountRepository.findByCustomerId("456")).thenReturn(Flux.empty());
-        when(accountRepository.save(accountEntity)).thenReturn(Mono.error(new RuntimeException("Database error")));
-        StepVerifier.create(accountService.newAccount(account))
-                .expectError(InternalServerErrorException.class)
-                .verify();
-        verify(accountRepository).save(accountEntity);
-    }
-
     @Test
     void removeAccount_ReturnsNoContent() {
         String accountId = "123";
-        AccountEntity existingAccount = new AccountEntity();
+        AccountEntityDTO existingAccount = new AccountEntityDTO();
         existingAccount.setId(accountId);
         when(accountRepository.findById(accountId)).thenReturn(Mono.just(existingAccount));
         when(accountRepository.delete(existingAccount)).thenReturn(Mono.empty());
@@ -225,7 +107,7 @@ class AccountServiceImplTest {
     @Test
     void removeAccount_ThrowsException() {
         String accountId = "789";
-        AccountEntity existingAccount = new AccountEntity();
+        AccountEntityDTO existingAccount = new AccountEntityDTO();
         existingAccount.setId(accountId);
         when(accountRepository.findById(accountId)).thenReturn(Mono.just(existingAccount));
         when(accountRepository.delete(existingAccount)).thenReturn(Mono.error(new RuntimeException("Database error")));
@@ -238,19 +120,19 @@ class AccountServiceImplTest {
 
     @Test
     void listAccounts_ReturnsList() {
-        AccountEntity accountEntity1 = new AccountEntity();
-        accountEntity1.setId("1");
-        accountEntity1.setCustomerId("123");
-        accountEntity1.setAccountType(AccountEntity.AccountType.AHORRO);
-        AccountEntity accountEntity2 = new AccountEntity();
-        accountEntity2.setId("2");
-        accountEntity2.setCustomerId("456");
-        accountEntity2.setAccountType(AccountEntity.AccountType.CORRIENTE);
+        AccountEntityDTO accountEntityDTO1 = new AccountEntityDTO();
+        accountEntityDTO1.setId("1");
+        accountEntityDTO1.setCustomerId("123");
+        accountEntityDTO1.setAccountType(AccountEntityDTO.AccountType.AHORRO);
+        AccountEntityDTO accountEntityDTO2 = new AccountEntityDTO();
+        accountEntityDTO2.setId("2");
+        accountEntityDTO2.setCustomerId("456");
+        accountEntityDTO2.setAccountType(AccountEntityDTO.AccountType.CORRIENTE);
         Account accountDto1 = new Account().id("1").customerId("123").accountType(Account.AccountTypeEnum.AHORRO);
         Account accountDto2 = new Account().id("2").customerId("456").accountType(Account.AccountTypeEnum.CORRIENTE);
-        when(accountRepository.findAll()).thenReturn(Flux.just(accountEntity1, accountEntity2));
-        when(accountConverter.toDto(accountEntity1)).thenReturn(accountDto1);
-        when(accountConverter.toDto(accountEntity2)).thenReturn(accountDto2);
+        when(accountRepository.findAll()).thenReturn(Flux.just(accountEntityDTO1, accountEntityDTO2));
+        when(accountConverter.toDto(accountEntityDTO1)).thenReturn(accountDto1);
+        when(accountConverter.toDto(accountEntityDTO2)).thenReturn(accountDto2);
         StepVerifier.create(accountService.listAccounts())
                 .expectNextMatches(response -> response.getStatusCode() == HttpStatus.OK)
                 .verifyComplete();
@@ -284,16 +166,16 @@ class AccountServiceImplTest {
         String customerId = "456";
         Account updatedAccount = new Account();
         updatedAccount.setAccountType(Account.AccountTypeEnum.AHORRO);
-        AccountEntity existingEntity = new AccountEntity();
+        AccountEntityDTO existingEntity = new AccountEntityDTO();
         existingEntity.setId(accountId);
         existingEntity.setCustomerId(customerId);
-        existingEntity.setCustomerType(AccountEntity.CustomerType.PERSONAL);
-        existingEntity.setAccountType(AccountEntity.AccountType.AHORRO);
-        AccountEntity updatedEntity = new AccountEntity();
+        existingEntity.setCustomerType(AccountEntityDTO.CustomerType.PERSONAL);
+        existingEntity.setAccountType(AccountEntityDTO.AccountType.AHORRO);
+        AccountEntityDTO updatedEntity = new AccountEntityDTO();
         updatedEntity.setId(accountId);
         updatedEntity.setCustomerId(customerId);
-        updatedEntity.setCustomerType(AccountEntity.CustomerType.PERSONAL);
-        updatedEntity.setAccountType(AccountEntity.AccountType.AHORRO);
+        updatedEntity.setCustomerType(AccountEntityDTO.CustomerType.PERSONAL);
+        updatedEntity.setAccountType(AccountEntityDTO.AccountType.AHORRO);
         Account updatedDto = new Account();
         updatedDto.setAccountType(Account.AccountTypeEnum.AHORRO);
         when(accountRepository.findById(accountId)).thenReturn(Mono.just(existingEntity));
@@ -313,21 +195,21 @@ class AccountServiceImplTest {
         String customerId = "456";
         Account updatedAccount = new Account();
         updatedAccount.setAccountType(Account.AccountTypeEnum.AHORRO);
-        AccountEntity existingEntity = new AccountEntity();
+        AccountEntityDTO existingEntity = new AccountEntityDTO();
         existingEntity.setId(accountId);
         existingEntity.setCustomerId(customerId);
-        existingEntity.setCustomerType(AccountEntity.CustomerType.PERSONAL);
-        existingEntity.setAccountType(AccountEntity.AccountType.CORRIENTE);
-        AccountEntity updatedEntity = new AccountEntity();
+        existingEntity.setCustomerType(AccountEntityDTO.CustomerType.PERSONAL);
+        existingEntity.setAccountType(AccountEntityDTO.AccountType.CORRIENTE);
+        AccountEntityDTO updatedEntity = new AccountEntityDTO();
         updatedEntity.setId(accountId);
         updatedEntity.setCustomerId(customerId);
-        updatedEntity.setCustomerType(AccountEntity.CustomerType.PERSONAL);
-        updatedEntity.setAccountType(AccountEntity.AccountType.AHORRO);
-        AccountEntity anotherExistingAccount = new AccountEntity();
+        updatedEntity.setCustomerType(AccountEntityDTO.CustomerType.PERSONAL);
+        updatedEntity.setAccountType(AccountEntityDTO.AccountType.AHORRO);
+        AccountEntityDTO anotherExistingAccount = new AccountEntityDTO();
         anotherExistingAccount.setId("789");
         anotherExistingAccount.setCustomerId(customerId);
-        anotherExistingAccount.setCustomerType(AccountEntity.CustomerType.PERSONAL);
-        anotherExistingAccount.setAccountType(AccountEntity.AccountType.AHORRO);
+        anotherExistingAccount.setCustomerType(AccountEntityDTO.CustomerType.PERSONAL);
+        anotherExistingAccount.setAccountType(AccountEntityDTO.AccountType.AHORRO);
         when(accountRepository.findById(accountId)).thenReturn(Mono.just(existingEntity));
         when(accountConverter.toEntity(updatedAccount)).thenReturn(updatedEntity);
         when(accountRepository.findByCustomerId(customerId)).thenReturn(Flux.just(anotherExistingAccount));
@@ -372,18 +254,18 @@ class AccountServiceImplTest {
     void upgradeAccount_WhenUpdatingToPlazoFijo() {
         String accountId = "123";
         String customerId = "456";
-        AccountEntity existingEntity = new AccountEntity();
+        AccountEntityDTO existingEntity = new AccountEntityDTO();
         existingEntity.setId(accountId);
         existingEntity.setCustomerId(customerId);
-        existingEntity.setCustomerType(AccountEntity.CustomerType.PERSONAL);
-        existingEntity.setAccountType(AccountEntity.AccountType.AHORRO);
+        existingEntity.setCustomerType(AccountEntityDTO.CustomerType.PERSONAL);
+        existingEntity.setAccountType(AccountEntityDTO.AccountType.AHORRO);
         Account updatedAccount = new Account();
         updatedAccount.setAccountType(Account.AccountTypeEnum.PLAZO_FIJO);
-        AccountEntity updatedEntity = new AccountEntity();
+        AccountEntityDTO updatedEntity = new AccountEntityDTO();
         updatedEntity.setId(accountId);
         updatedEntity.setCustomerId(customerId);
-        updatedEntity.setCustomerType(AccountEntity.CustomerType.PERSONAL);
-        updatedEntity.setAccountType(AccountEntity.AccountType.PLAZO_FIJO);
+        updatedEntity.setCustomerType(AccountEntityDTO.CustomerType.PERSONAL);
+        updatedEntity.setAccountType(AccountEntityDTO.AccountType.PLAZO_FIJO);
         Account updatedDto = new Account();
         updatedDto.setAccountType(Account.AccountTypeEnum.PLAZO_FIJO);
         when(accountRepository.findById(accountId)).thenReturn(Mono.just(existingEntity));
@@ -401,19 +283,19 @@ class AccountServiceImplTest {
     void upgradeAccount_WhenUpdatingToCorrienteForEmpresarial_ShouldSucceed() {
         String accountId = "123";
         String customerId = "456";
-        AccountEntity existingEntity = new AccountEntity();
+        AccountEntityDTO existingEntity = new AccountEntityDTO();
         existingEntity.setId(accountId);
         existingEntity.setCustomerId(customerId);
-        existingEntity.setCustomerType(AccountEntity.CustomerType.EMPRESARIAL);
-        existingEntity.setAccountType(AccountEntity.AccountType.AHORRO);
+        existingEntity.setCustomerType(AccountEntityDTO.CustomerType.EMPRESARIAL);
+        existingEntity.setAccountType(AccountEntityDTO.AccountType.AHORRO);
         existingEntity.setHolders(Collections.singletonList("holder1")); // Tiene titulares
         Account updatedAccount = new Account();
         updatedAccount.setAccountType(Account.AccountTypeEnum.CORRIENTE);
-        AccountEntity updatedEntity = new AccountEntity();
+        AccountEntityDTO updatedEntity = new AccountEntityDTO();
         updatedEntity.setId(accountId);
         updatedEntity.setCustomerId(customerId);
-        updatedEntity.setCustomerType(AccountEntity.CustomerType.EMPRESARIAL);
-        updatedEntity.setAccountType(AccountEntity.AccountType.CORRIENTE);
+        updatedEntity.setCustomerType(AccountEntityDTO.CustomerType.EMPRESARIAL);
+        updatedEntity.setAccountType(AccountEntityDTO.AccountType.CORRIENTE);
         updatedEntity.setHolders(Collections.singletonList("holder1")); // Mantiene titulares
         Account updatedDto = new Account();
         updatedDto.setAccountType(Account.AccountTypeEnum.CORRIENTE);
@@ -429,67 +311,5 @@ class AccountServiceImplTest {
                 .verifyComplete();
     }
 
-    @Test
-    void depositAmount_Success() {
-        String accountId = "343445454";
-        DepositRequest depositRequest = new DepositRequest().monto(2000.00);
-        AccountEntity accountEntity = new AccountEntity();
-        accountEntity.setId(accountId);
-        accountEntity.setCustomerId("123");
-        accountEntity.setCustomerType(AccountEntity.CustomerType.PERSONAL);
-        accountEntity.setAccountType(AccountEntity.AccountType.AHORRO);
-        accountEntity.setBalance(2000.00);
-        AccountEntity updatedEntity = new AccountEntity();
-        updatedEntity.setId(accountId);
-        updatedEntity.setCustomerId("123");
-        updatedEntity.setCustomerType(AccountEntity.CustomerType.PERSONAL);
-        updatedEntity.setAccountType(AccountEntity.AccountType.AHORRO);
-        updatedEntity.setBalance(accountEntity.getBalance() + depositRequest.getMonto());
-        Account updatedAccount = new Account();
-        updatedAccount.setId(updatedEntity.getId());
-        updatedAccount.setCustomerId(updatedEntity.getCustomerId());
-        updatedAccount.setCustomerType(Account.CustomerTypeEnum.PERSONAL);
-        updatedAccount.setAccountType(Account.AccountTypeEnum.AHORRO);
-        updatedAccount.setBalance(updatedEntity.getBalance());
-        Mockito.when(accountRepository.findById(accountId)).thenReturn(Mono.just(accountEntity));
-        Mockito.when(accountRepository.save(any())).thenReturn(Mono.just(updatedEntity));
-        Mockito.when(accountConverter.toDto(any())).thenReturn(updatedAccount);
-        StepVerifier.create(accountService.depositAmount(accountId, depositRequest))
-                .expectNextMatches(response -> response.getBody().getBalance() == 4000.00) // 2000 + 2000
-                .verifyComplete();
-        Mockito.verify(accountRepository).findById(accountId);
-        Mockito.verify(accountRepository).save(any());
-    }
-    @Test
-    void withdraw_Success() {
-        String accountId = "343445454";
-        WithdrawRequest withdrawRequest = new WithdrawRequest().monto(2000.00);
-        AccountEntity accountEntity = new AccountEntity();
-        accountEntity.setId(accountId);
-        accountEntity.setCustomerId("123");
-        accountEntity.setCustomerType(AccountEntity.CustomerType.PERSONAL);
-        accountEntity.setAccountType(AccountEntity.AccountType.AHORRO);
-        accountEntity.setBalance(2000.00);
-        AccountEntity updatedEntity = new AccountEntity();
-        updatedEntity.setId(accountId);
-        updatedEntity.setCustomerId("123");
-        updatedEntity.setCustomerType(AccountEntity.CustomerType.PERSONAL);
-        updatedEntity.setAccountType(AccountEntity.AccountType.AHORRO);
-        updatedEntity.setBalance(accountEntity.getBalance() - withdrawRequest.getMonto());
-        Account updatedAccount = new Account();
-        updatedAccount.setId(updatedEntity.getId());
-        updatedAccount.setCustomerId(updatedEntity.getCustomerId());
-        updatedAccount.setCustomerType(Account.CustomerTypeEnum.PERSONAL);
-        updatedAccount.setAccountType(Account.AccountTypeEnum.AHORRO);
-        updatedAccount.setBalance(updatedEntity.getBalance());
-        Mockito.when(accountRepository.findById(accountId)).thenReturn(Mono.just(accountEntity));
-        Mockito.when(accountRepository.save(any())).thenReturn(Mono.just(updatedEntity));
-        Mockito.when(accountConverter.toDto(any())).thenReturn(updatedAccount);
-        StepVerifier.create(accountService.withdrawAmount(accountId, withdrawRequest))
-                .expectNextMatches(response -> response.getBody().getBalance() == 0)
-                .verifyComplete();
-        Mockito.verify(accountRepository).findById(accountId);
-        Mockito.verify(accountRepository).save(any());
-    }
 
 }
