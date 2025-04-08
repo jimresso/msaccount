@@ -263,6 +263,27 @@ paths:
               schema:
                 $ref: "#/components/schemas/ReportOperationsResponse"
 
+  /report/product/operations:
+    post:
+      operationId: reportProduct
+      tags:
+        - report
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ReportProductoRequest"
+      responses:
+        '200':
+          description: Single account operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ReportProductoResponse"
+
 components:
   schemas:
     Account:
@@ -355,3 +376,23 @@ components:
       properties:
         dni:
           type: string
+
+    ReportProductoResponse:
+      type: object
+      properties:
+        accountType:
+          type: string
+        customerId:
+          type: string
+        commissionAmount:
+          type: number
+          format: double
+    ReportProductoRequest:
+      type: object
+      properties:
+        startDate:
+          type: string
+          format: date
+        endDate:
+          type: string
+          format: date
