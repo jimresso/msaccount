@@ -21,7 +21,6 @@ import static org.mockito.Mockito.when;
 
 
 @ExtendWith(MockitoExtension.class)
-@Disabled
 class AccountControllerTest {
     @Mock
     private AccountService accountService;
