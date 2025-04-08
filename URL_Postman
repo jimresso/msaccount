@@ -39,7 +39,8 @@ http://localhost:8086/api/accounts/{id}
 [PUT] - [ID]: Deposita a la cuenta por {id}
 http://localhost:8086/api/accounts/{id}/deposit
 {
-  "monto": 2000
+  "customerId":"456264",
+   "monto": 1000
 }
 ******************************************************
 [PUT] - [ID]: Retira a la cuenta por {id}
@@ -47,4 +48,41 @@ http://localhost:8086/api/accounts/67e82db111b16856d3db3585/withdraw
 {
   "monto": 2000
 }
-
+******************************************************
+[POST] - Crea el monto que se cobrara por comisiones
+http://localhost:8086/commission
+ {
+        "accountType": "AHORRO",
+        "monto": 200.0
+ }  o
+  {
+         "accountType": "CORRIENTE",
+         "monto": 200.0
+  }
+******************************************************
+[DELETE] - borra comisiones pasandole el ID
+http://localhost:8086/commission/67f031fa46bd2c708150ea3a
+******************************************************
+[GET] - Devuelve todas las comisiones creadas
+http://localhost:8086/commission/findallcommission
+******************************************************
+[PUT] - Actualiza las comisiones
+http://localhost:8086/commission/CORRIENTE
+  {
+        "accountType": "CORRIENTE",
+        "monto": 200.5
+  }
+  nota: no pueden existir mas de dos tipos iguales de comisiones
+*********************************************************
+[POST] - Reporte de operacion diario mensual por mes
+http://localhost:8086/report/operations
+{
+  "dni": "676789456"
+}
+***********************************************************
+[POST] -Reporte por producto  solo cuentas
+http://localhost:8086/report/product/operations
+{
+  "startDate": "2010-01-01",
+  "endDate": "2010-12-31"
+}

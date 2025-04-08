@@ -1,41 +1,32 @@
 [{
   "_id": {
-    "$oid": "67e82db111b16856d3db3585"
+    "$oid": "67f1351ffe8f9a1bca7468f5"
   },
-  "customerId": "123456",
+  "dni": "676789456",
+  "customerId": "456264",
   "customerType": "PERSONAL",
-  "accountType": "PLAZO_FIJO",
-  "balance": 18200,
-  "monthlyLimit": 7,
-  "_class": "com.nttdata.account.msaccount.model.AccountEntity"
-},
-{
-  "_id": {
-    "$oid": "67e874b51f2b8a2546e3ed5c"
-  },
-  "customerId": "123412125",
-  "customerType": "EMPRESARIAL",
   "accountType": "CORRIENTE",
-  "balance": 10000,
+  "balance": 3800,
   "monthlyLimit": 50000,
   "lastDepositDate": {
     "$date": "2025-03-29T05:00:00.000Z"
   },
-  "holders": [
-    "edgar figuera",
-    "favio Aragundi",
-    "carlos noriega"
-  ],
-  "_class": "com.nttdata.account.msaccount.model.AccountEntity"
+  "limitTransaction": 3,
+  "_class": "com.nttdata.account.msaccount.model.AccountEntityDTO"
 },
 {
   "_id": {
-    "$oid": "67e985b6ee26324cfda14b71"
+    "$oid": "67f30a119fbcc57548bd3ede"
   },
-  "customerId": "128323574",
+  "dni": "676789456",
+  "customerId": "55887446",
   "customerType": "PERSONAL",
   "accountType": "AHORRO",
-  "balance": 1100,
-  "monthlyLimit": 2,
-  "_class": "com.nttdata.account.msaccount.model.AccountEntity"
+  "balance": 1700,
+  "monthlyLimit": 50000,
+  "lastDepositDate": {
+    "$date": "2025-03-29T05:00:00.000Z"
+  },
+  "limitTransaction": 15,
+  "_class": "com.nttdata.account.msaccount.model.AccountEntityDTO"
 }]
