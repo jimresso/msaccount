@@ -39,9 +39,4 @@ public class ReportAccountController implements ReportApi {
         return  reportProductoRequest.flatMap(reportAccountService::reportProduct);
     }
 
-//    @Override
-//    public Mono<ResponseEntity<Flux<ReportProductoResponse>>> reportProduct(ServerWebExchange exchange) {
-//        logger.info("Starting reportProduct");
-//        return reportAccountService.reportProduct();
-//    }
 }
