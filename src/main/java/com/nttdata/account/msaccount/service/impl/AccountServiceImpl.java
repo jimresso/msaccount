@@ -1,6 +1,7 @@
 package com.nttdata.account.msaccount.service.impl;
 
 
+import com.nttdata.account.msaccount.configure.AccountProperties;
 import com.nttdata.account.msaccount.exception.BusinessException;
 import com.nttdata.account.msaccount.exception.EntityNotFoundException;
 import com.nttdata.account.msaccount.exception.InternalServerErrorException;
@@ -37,20 +38,14 @@ import java.util.Map;
 @Service
 @RequiredArgsConstructor
 public class AccountServiceImpl implements AccountService {
-    @Autowired
-    private WebClient.Builder webClientBuilder;
+
+    private final WebClient.Builder webClientBuilder;
     private final AccountRepository accountRepository;
     private final AccountConverter accountConverter;
     private final TransactionRepository transactionRepository;
     private final ComissionRepository comissionRepository;
+    private final AccountProperties accountProperties;
     private static final Logger logger = LoggerFactory.getLogger(AccountServiceImpl.class);
-    @Value("${msaccount.amount.mini.vip}")
-    private Double amountMiniVip;
-    @Value("${msaccount.amount.mini.pemy}")
-    private Double amountMinipemy;
-    @Value("${limit.transaction}")
-    private int limit;
-
 
     @Override
     public Mono<ResponseEntity<Account>> findAccountById(String id) {
@@ -76,19 +71,20 @@ public Mono<ResponseEntity<Account>> newAccount(Account account) {
     AccountEntityDTO accountEntityDTO = accountConverter.toEntity(account);
     if (accountEntityDTO.getClientType() == AccountEntityDTO.ClientType.VIP ||
             accountEntityDTO.getClientType() == AccountEntityDTO.ClientType.PYME) {
-
         if (accountEntityDTO.getClientType() == AccountEntityDTO.ClientType.VIP &&
-                accountEntityDTO.getBalance() < amountMiniVip) {
+                accountEntityDTO.getBalance() < accountProperties.getVip()) {
             logger.warn("The initial amount {} is less than the minimum allowed " +
-                    "amount of {} for VIP accounts", accountEntityDTO.getBalance(), amountMiniVip);
+                    "amount of {} for VIP accounts", accountEntityDTO.getBalance(),
+                    accountProperties.getVip());
             return Mono.error(new BusinessException("The initial amount must be greater " +
-                    "than or equal to " + amountMiniVip + " for VIP accounts."));
+                    "than or equal to " + accountProperties.getVip() + " for VIP accounts."));
         } else if (accountEntityDTO.getClientType() == AccountEntityDTO.ClientType.PYME &&
-                accountEntityDTO.getBalance() < amountMinipemy) {
+                accountEntityDTO.getBalance() < accountProperties.getPemy()) {
             logger.warn("The initial amount {} is less than the minimum allowed" +
-                    " amount of {} for PYME accounts", accountEntityDTO.getBalance(), amountMinipemy);
+                    " amount of {} for PYME accounts", accountEntityDTO.getBalance(),
+                    accountProperties.getPemy());
             return Mono.error(new BusinessException("The initial amount must be greater" +
-                    " than or equal to " + amountMinipemy + " for PYME accounts."));
+                    " than or equal to " + accountProperties.getPemy() + " for PYME accounts."));
         }
         return accountRepository.findByDni(account.getDni())
                 .collectList()
@@ -216,7 +212,9 @@ public Mono<ResponseEntity<Account>> newAccount(Account account) {
                                         if ( accountOrigin.getBalance() < amount.getMonto() ) {
                                             return Mono.error(new BusinessException("insufficient balance"));
                                         }
-                                        if (accountOrigin .getLimitTransaction() > limit) {
+
+                                        if (accountOrigin .getLimitTransaction() >
+                                                accountProperties.getTransaction()) {
                                             netAmount = amount.getMonto() - commissionAmount;
 
                                             if (netAmount < 0) {
@@ -256,6 +254,9 @@ public Mono<ResponseEntity<Account>> newAccount(Account account) {
                 .map(ResponseEntity::ok)
                 .doOnSuccess(response -> logger.info("Successful deposit into account {}", id))
                 .onErrorResume(Exception.class, e -> {
+                    if (e instanceof BusinessException || e instanceof EntityNotFoundException) {
+                        return Mono.error(e);
+                    }
                     logger.error("Unexpected error during deposit: {}", e.getMessage());
                     return Mono.error(new InternalServerErrorException("Error processing deposit"));
                 });
@@ -278,7 +279,7 @@ public Mono<ResponseEntity<Account>> newAccount(Account account) {
                                 if ( existingAccount.getBalance() < amount.getMonto() ) {
                                     return Mono.error(new BusinessException("insufficient balance"));
                                 }
-                                if (existingAccount.getLimitTransaction() > limit) {
+                                if (existingAccount.getLimitTransaction() > accountProperties.getTransaction()) {
                                     netAmount = amount.getMonto() - commissionAmount;
                                     if (netAmount < 0) {
                                         return Mono.error(
