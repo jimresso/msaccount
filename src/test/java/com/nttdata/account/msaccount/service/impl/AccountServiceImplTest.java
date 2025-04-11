@@ -894,13 +894,11 @@ class AccountServiceImplTest {
         verify(accountRepository, times(2)).save(any(AccountEntityDTO.class));
         verify(transactionRepository).save(any(TransactionDTO.class));
     }
-
     @Test
     void testWithdrawAmount_Successful() {
         String accountId = "acc-123";
         WithdrawRequest request = new WithdrawRequest();
         request.setMonto(100.0);
-
         AccountEntityDTO existingAccount = new AccountEntityDTO();
         existingAccount.setId(accountId);
         existingAccount.setCustomerId("cust-001");
@@ -908,33 +906,28 @@ class AccountServiceImplTest {
         existingAccount.setAccountType(AccountEntityDTO.AccountType.CORRIENTE);
         existingAccount.setBalance(500.0);
         existingAccount.setLimitTransaction(12.0);
-
         TaxedTransactionLimitDTO commission = new TaxedTransactionLimitDTO();
         commission.setMonto(BigDecimal.valueOf(10.0).doubleValue());
-
         AccountEntityDTO savedAccount = new AccountEntityDTO();
         savedAccount.setId(accountId);
         savedAccount.setCustomerId("cust-001");
         savedAccount.setDni("12345678");
         savedAccount.setAccountType(AccountEntityDTO.AccountType.CORRIENTE);
         savedAccount.setBalance(390.0);
-        savedAccount.setLimitTransaction(4.0);
-
+        savedAccount.setLimitTransaction(13.0);
         Account expectedAccount = new Account();
         expectedAccount.setId(accountId);
-
         TransactionDTO transactionDTO = new TransactionDTO();
-        transactionDTO.setTransactionType(TransactionDTO.TransactionType.DEPOSITO);
+        transactionDTO.setTransactionType(TransactionDTO.TransactionType.RETIRO);
         transactionDTO.setAmount(100.0);
         transactionDTO.setCommissionAmount(10.0);
         transactionDTO.setCustomerIdOrigin("acc-123");
         transactionDTO.setCustomerIdDestination("cust-001");
         transactionDTO.setDni("12345678");
-        when(accountRepository.findById(accountId)).thenReturn(Mono.just(existingAccount));
+        when(accountRepository.findFirstByCustomerId(accountId)).thenReturn(Mono.just(existingAccount));
         when(comissionRepository.findByAccountType("CORRIENTE")).thenReturn(Mono.just(commission));
         when(accountRepository.save(any(AccountEntityDTO.class))).thenReturn(Mono.just(savedAccount));
         when(transactionRepository.save(any(TransactionDTO.class))).thenReturn(Mono.just(transactionDTO));
-        //when(accountConverter.toDto(any(AccountEntityDTO.class))).thenReturn(expectedAccount);
         when(accountConverter.toDto(any(AccountEntityDTO.class))).thenReturn(expectedAccount);
         StepVerifier.create(accountService.withdrawAmount(accountId, request))
                 .expectNextMatches(response ->
@@ -942,12 +935,10 @@ class AccountServiceImplTest {
                                 Objects.requireNonNull(response.getBody()).getId().equals(accountId)
                 )
                 .verifyComplete();
-
-        verify(accountRepository).findById(accountId);
+        verify(accountRepository).findFirstByCustomerId(accountId);
         verify(comissionRepository).findByAccountType("CORRIENTE");
         verify(accountRepository, times(1)).save(any(AccountEntityDTO.class));
         verify(transactionRepository).save(any(TransactionDTO.class));
         verify(accountConverter).toDto(any(AccountEntityDTO.class));
     }
-
 }

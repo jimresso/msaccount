@@ -53,11 +53,11 @@ public class AccountController implements ApiApi {
     }
 
     @Override
-    public Mono<ResponseEntity<Account>> withdraw(String id ,
+    public Mono<ResponseEntity<Account>> withdraw(String customerId ,
                                                   Mono<WithdrawRequest> amount,
                                                   ServerWebExchange exchange) {
-        logger.info("Starting withdraw Id: {}", id);
-        return amount.flatMap(a -> accountService.withdrawAmount(id, a));
+        logger.info("Starting withdraw Id: {}", customerId);
+        return amount.flatMap(a -> accountService.withdrawAmount(customerId, a));
     }
 
 

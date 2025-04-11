@@ -132,14 +132,14 @@ paths:
                 $ref: "#/components/schemas/Account"
         '400':
           description: Invalid data
-  /api/accounts/{id}/withdraw:
+  /api/accounts/{customerId}/withdraw:
     put:
       summary: Withdraw amount from account
       operationId: withdraw
       tags:
         - account
       parameters:
-        - name: id
+        - name: customerId
           in: path
           required: true
           schema:

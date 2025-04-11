@@ -263,9 +263,9 @@ public Mono<ResponseEntity<Account>> newAccount(Account account) {
     }
 
     @Override
-    public Mono<ResponseEntity<Account>> withdrawAmount(String id, WithdrawRequest amount) {
-        return accountRepository.findById(id)
-                .switchIfEmpty(Mono.error(new EntityNotFoundException("Account not found with id: " + id)))
+    public Mono<ResponseEntity<Account>> withdrawAmount(String customerId, WithdrawRequest amount) {
+        return accountRepository.findFirstByCustomerId(customerId)
+                .switchIfEmpty(Mono.error(new EntityNotFoundException("Account not found with id: " + customerId)))
                 .flatMap(existingAccount -> {
                     logger.warn("Account found: {}", existingAccount.getId());
                     return comissionRepository.findByAccountType(existingAccount.getAccountType().name())
@@ -311,7 +311,7 @@ public Mono<ResponseEntity<Account>> newAccount(Account account) {
                 })
                 .map(accountConverter::toDto)
                 .map(ResponseEntity::ok)
-                .doOnSuccess(response -> logger.info("Successful withdrawal from account {}", id))
+                .doOnSuccess(response -> logger.info("Successful withdrawal from account {}", customerId))
                 .onErrorResume(Exception.class, e -> {
                     logger.error("Unexpected error during withdrawal: {}", e.getMessage());
                     return Mono.error(new InternalServerErrorException("Error processing withdrawal"));

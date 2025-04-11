@@ -15,5 +15,5 @@ public interface AccountService {
     Mono<ResponseEntity<Flux<Account>>> listAccounts();
 
     Mono<ResponseEntity<Account>> depositAmount(String id, DepositRequest a);
-    Mono<ResponseEntity<Account>>withdrawAmount(String id, WithdrawRequest a);
+    Mono<ResponseEntity<Account>>withdrawAmount(String customerId, WithdrawRequest a);
 }
