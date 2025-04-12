@@ -359,7 +359,7 @@ class AccountServiceImplTest {
         Mono<ResponseEntity<Account>> result = accountService.newAccount(account);
         StepVerifier.create(result)
                 .expectErrorMatches(throwable -> throwable instanceof BusinessException &&
-                        throwable.getMessage().contains("The initial amount must be greater than or equal to 1000.0 for VIP accounts"))
+                        throwable.getMessage().contains("Minimum balance for VIP not met"))
                 .verify();
     }
     @Test
@@ -378,7 +378,7 @@ class AccountServiceImplTest {
         Mono<ResponseEntity<Account>> result = accountService.newAccount(account);
         StepVerifier.create(result)
                 .expectErrorMatches(throwable -> throwable instanceof BusinessException &&
-                        throwable.getMessage().contains("The initial amount must be greater than or equal to 1000.0 for PYME accounts"))
+                        throwable.getMessage().contains("Minimum balance for PYME not met"))
                 .verify();
     }
 
@@ -410,12 +410,13 @@ class AccountServiceImplTest {
         when(webClient.post()).thenReturn(requestBodyUriSpec);
         when(requestBodyUriSpec.bodyValue(any())).thenReturn(requestHeadersSpec);
         when(requestHeadersSpec.retrieve()).thenReturn(responseSpec);
+        when(responseSpec.onStatus(any(), any())).thenReturn(responseSpec);
         when(responseSpec.bodyToMono(Map.class)).thenReturn(Mono.just(response));
 
         Mono<ResponseEntity<Account>> result = accountService.newAccount(account);
         StepVerifier.create(result)
                 .expectErrorMatches(throwable -> throwable instanceof BusinessException &&
-                        throwable.getMessage().contains("Customer does not have a credit card, cannot create VIP or PYME account"))
+                        throwable.getMessage().contains("Customer has no credit card"))
                 .verify();
         verify(accountRepository).findByDni(account.getDni());
         verify(webClientBuilder).build();
@@ -456,6 +457,7 @@ class AccountServiceImplTest {
         when(webClientBuilder.build()).thenReturn(webClient);
         when(webClient.post()).thenReturn(requestBodyUriSpec);
         when(requestBodyUriSpec.bodyValue(any())).thenReturn(requestHeadersSpec);
+        when(responseSpec.onStatus(any(), any())).thenReturn(responseSpec);
         when(requestHeadersSpec.retrieve()).thenReturn(responseSpec);
         when(responseSpec.bodyToMono(Map.class)).thenReturn(Mono.just(response));
 
@@ -513,6 +515,7 @@ class AccountServiceImplTest {
         when(webClientBuilder.build()).thenReturn(webClient);
         when(webClient.post()).thenReturn(requestBodyUriSpec);
         when(requestBodyUriSpec.bodyValue(any())).thenReturn(requestHeadersSpec);
+        when(responseSpec.onStatus(any(), any())).thenReturn(responseSpec);
         when(requestHeadersSpec.retrieve()).thenReturn(responseSpec);
         when(responseSpec.bodyToMono(Map.class)).thenReturn(Mono.just(response));
 
@@ -574,6 +577,7 @@ class AccountServiceImplTest {
         when(webClientBuilder.build()).thenReturn(webClient);
         when(webClient.post()).thenReturn(requestBodyUriSpec);
         when(requestBodyUriSpec.bodyValue(any())).thenReturn(requestHeadersSpec);
+        when(responseSpec.onStatus(any(), any())).thenReturn(responseSpec);
         when(requestHeadersSpec.retrieve()).thenReturn(responseSpec);
         when(responseSpec.bodyToMono(Map.class)).thenReturn(Mono.just(response));
 
@@ -638,6 +642,7 @@ class AccountServiceImplTest {
         when(webClientBuilder.build()).thenReturn(webClient);
         when(webClient.post()).thenReturn(requestBodyUriSpec);
         when(requestBodyUriSpec.bodyValue(any())).thenReturn(requestHeadersSpec);
+        when(responseSpec.onStatus(any(), any())).thenReturn(responseSpec);
         when(requestHeadersSpec.retrieve()).thenReturn(responseSpec);
         when(responseSpec.bodyToMono(Map.class)).thenReturn(Mono.just(response));
 
@@ -703,6 +708,7 @@ class AccountServiceImplTest {
         when(webClientBuilder.build()).thenReturn(webClient);
         when(webClient.post()).thenReturn(requestBodyUriSpec);
         when(requestBodyUriSpec.bodyValue(any())).thenReturn(requestHeadersSpec);
+        when(responseSpec.onStatus(any(), any())).thenReturn(responseSpec);
         when(requestHeadersSpec.retrieve()).thenReturn(responseSpec);
         when(responseSpec.bodyToMono(Map.class)).thenReturn(Mono.just(response));
 
@@ -710,7 +716,7 @@ class AccountServiceImplTest {
         StepVerifier.create(result)
                 .expectErrorSatisfies(throwable -> {
                     assertThat(throwable).isInstanceOf(InternalServerErrorException.class);
-                    assertThat(throwable.getMessage()).isEqualTo("An error occurred while saving the account");
+                    assertThat(throwable.getMessage()).isEqualTo("Error saving account");
                 })
                 .verify();
 
@@ -941,4 +947,5 @@ class AccountServiceImplTest {
         verify(transactionRepository).save(any(TransactionDTO.class));
         verify(accountConverter).toDto(any(AccountEntityDTO.class));
     }
+
 }

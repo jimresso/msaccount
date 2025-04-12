@@ -2,9 +2,11 @@ package com.nttdata.account.msaccount.service.impl;
 
 
 import com.nttdata.account.msaccount.configure.AccountProperties;
+import com.nttdata.account.msaccount.notificaciones.FallbackNotifier;
 import com.nttdata.account.msaccount.exception.BusinessException;
 import com.nttdata.account.msaccount.exception.EntityNotFoundException;
 import com.nttdata.account.msaccount.exception.InternalServerErrorException;
+import com.nttdata.account.msaccount.exception.RemoteServiceUnavailableException;
 import com.nttdata.account.msaccount.mapper.AccountConverter;
 import com.nttdata.account.msaccount.model.AccountEntityDTO;
 import com.nttdata.account.msaccount.model.TaxedTransactionLimitDTO;
@@ -13,24 +15,23 @@ import com.nttdata.account.msaccount.repository.AccountRepository;
 import com.nttdata.account.msaccount.repository.ComissionRepository;
 import com.nttdata.account.msaccount.repository.TransactionRepository;
 import com.nttdata.account.msaccount.service.AccountService;
-import jakarta.annotation.PostConstruct;
+import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import lombok.RequiredArgsConstructor;
 import org.openapitools.model.Account;
 import org.openapitools.model.DepositRequest;
 import org.openapitools.model.WithdrawRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
+import org.springframework.web.reactive.function.client.WebClientRequestException;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import java.time.LocalDate;
-import java.util.stream.Collectors;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -45,6 +46,7 @@ public class AccountServiceImpl implements AccountService {
     private final TransactionRepository transactionRepository;
     private final ComissionRepository comissionRepository;
     private final AccountProperties accountProperties;
+    private final FallbackNotifier fallbackNotifier;
     private static final Logger logger = LoggerFactory.getLogger(AccountServiceImpl.class);
 
     @Override
@@ -65,69 +67,105 @@ public class AccountServiceImpl implements AccountService {
                             InternalServerErrorException("Unexpected error occurred while retrieving account"));
                 });
     }
-@Override
-public Mono<ResponseEntity<Account>> newAccount(Account account) {
-    WebClient webClient = webClientBuilder.build();
-    AccountEntityDTO accountEntityDTO = accountConverter.toEntity(account);
-    if (accountEntityDTO.getClientType() == AccountEntityDTO.ClientType.VIP ||
-            accountEntityDTO.getClientType() == AccountEntityDTO.ClientType.PYME) {
-        if (accountEntityDTO.getClientType() == AccountEntityDTO.ClientType.VIP &&
-                accountEntityDTO.getBalance() < accountProperties.getVip()) {
-            logger.warn("The initial amount {} is less than the minimum allowed " +
-                    "amount of {} for VIP accounts", accountEntityDTO.getBalance(),
-                    accountProperties.getVip());
-            return Mono.error(new BusinessException("The initial amount must be greater " +
-                    "than or equal to " + accountProperties.getVip() + " for VIP accounts."));
-        } else if (accountEntityDTO.getClientType() == AccountEntityDTO.ClientType.PYME &&
-                accountEntityDTO.getBalance() < accountProperties.getPemy()) {
-            logger.warn("The initial amount {} is less than the minimum allowed" +
-                    " amount of {} for PYME accounts", accountEntityDTO.getBalance(),
-                    accountProperties.getPemy());
-            return Mono.error(new BusinessException("The initial amount must be greater" +
-                    " than or equal to " + accountProperties.getPemy() + " for PYME accounts."));
+    @CircuitBreaker(name = "circuitBreakerAccount", fallbackMethod = "fallbackCheckCard")
+    public Mono<ResponseEntity<Account>> newAccount(Account account) {
+        AccountEntityDTO dto = accountConverter.toEntity(account);
+        if (dto.getClientType() == AccountEntityDTO.ClientType.VIP &&
+                dto.getBalance() < accountProperties.getVip()) {
+            return Mono.error(new BusinessException("Minimum balance for VIP not met"));
         }
-        return accountRepository.findByDni(account.getDni())
-                .collectList()
-                .flatMap(existingAccounts -> {
-                    List<String> customerIds = existingAccounts.stream()
-                            .map(AccountEntityDTO::getCustomerId)
-                            .collect(Collectors.toList());
-                    Map<String, Object> request = new HashMap<>();
-                    request.put("customerId", customerIds);
-                    return webClient.post()
-                            .bodyValue(request)
-                            .retrieve()
-                            .bodyToMono(Map.class)
-                            .flatMap(response -> {
-                                Boolean hasCreditCard = (Boolean) response.get("creditCard");
-                                if (Boolean.TRUE.equals(hasCreditCard)) {
-                                    return createAccount(accountEntityDTO);
-                                } else {
-                                    logger.warn("Customer with DNI {} does not have a credit card", account.getDni());
-                                    return Mono.error(new BusinessException("Customer does not have a credit card," +
-                                            " cannot create VIP or PYME account"));
-                                }
+        if (dto.getClientType() == AccountEntityDTO.ClientType.PYME &&
+                dto.getBalance() < accountProperties.getPemy()) {
+            return Mono.error(new BusinessException("Minimum balance for PYME not met"));
+        }
+        if (dto.getClientType() == AccountEntityDTO.ClientType.VIP ||
+                dto.getClientType() == AccountEntityDTO.ClientType.PYME) {
+            return accountRepository.findByDni(account.getDni())
+                    .collectList()
+                    .flatMap(accounts -> {
+                        List<String> customerIds = accounts.stream()
+                                .map(AccountEntityDTO::getCustomerId)
+                                .toList();
+                        return checkCustomerHasCard(customerIds)
+                                .flatMap(hasCard -> {
+                                    if (Boolean.TRUE.equals(hasCard)) {
+                                        return createAccount(dto);
+                                    } else {
+                                        return Mono.error(new BusinessException("Customer has no credit card"));
+                                    }
+                                });
+                    })
+                    .onErrorResume(RemoteServiceUnavailableException.class, ex -> {
+                        logger.error("Error técnico al consultar tarjetas: {}", ex.getMessage());
+                        return Mono.error(ex);
+                    });
+        }
+        return createAccount(dto);
+    }
+    public Mono<Boolean> checkCustomerHasCard(List<String> customerIds) {
+        Map<String, Object> request = new HashMap<>();
+        request.put("customerId", customerIds);
+        return webClientBuilder.build()
+                .post()
+                .bodyValue(request)
+                .retrieve()
+                .onStatus(HttpStatusCode::is5xxServerError, response ->
+                        Mono.error(new RemoteServiceUnavailableException("Card service not available")))
+                .onStatus(HttpStatusCode::is4xxClientError, response ->
+                        Mono.error(new BusinessException("Client error checking card")))
+                .bodyToMono(Map.class)
+                .map(response -> (Boolean) response.get("creditCard"))
+                .onErrorMap(throwable -> {
+                    if (throwable instanceof WebClientRequestException) {
+                        return new RemoteServiceUnavailableException("Card service unreachable", throwable);
+                    }
+                return throwable;
+        });
+    }
+
+
+    public Mono<ResponseEntity<Account>> fallbackCheckCard(Throwable throwable) {
+        if (!(throwable instanceof BusinessException)) {
+            fallbackNotifier.sendFallbackEmail("AccountServiceImpl", throwable);
+        }
+        logger.warn("Fallback enabled for newAccount - type: {}", throwable.getClass().getName());
+        return Mono.error(throwable);
+    }
+
+    private Mono<ResponseEntity<Account>> createAccount(AccountEntityDTO dto) {
+        return validateAccountCreation(dto)
+                .flatMap(valid -> {
+                    if (!valid) {
+                        return Mono.error(new BusinessException("Account creation does not meet business rules"));
+                    }
+                    return accountRepository.save(dto)
+                            .map(accountConverter::toDto)
+                            .map(saved -> ResponseEntity.status(HttpStatus.CREATED).body(saved))
+                            .onErrorResume(e -> {
+                                logger.error("DB error: {}", e.getMessage());
+                                return Mono.error(new InternalServerErrorException("Error saving account"));
                             });
                 });
     }
-    return createAccount(accountEntityDTO);
-}
-    private Mono<ResponseEntity<Account>> createAccount(AccountEntityDTO accountEntityDTO) {
-        return validateAccountCreation(accountEntityDTO)
-                .flatMap(valid -> {
-                    if (Boolean.FALSE.equals(valid)) {
-                        logger.warn("The account does not meet the requirements");
-                        return Mono.error(new BusinessException("Account creation does not meet business rules"));
+    private Mono<Boolean> validateAccountCreation(AccountEntityDTO dto) {
+        return accountRepository.findByCustomerId(dto.getCustomerId())
+                .collectList()
+                .map(existingAccounts -> {
+                    var type = dto.getAccountType();
+                    var customerType = dto.getCustomerType();
+
+                    if (customerType == AccountEntityDTO.CustomerType.EMPRESARIAL) {
+                        boolean hasHolders = dto.getHolders() != null && !dto.getHolders().isEmpty();
+                        return hasHolders && type != AccountEntityDTO.AccountType.AHORRO
+                                && type != AccountEntityDTO.AccountType.PLAZO_FIJO;
                     }
-                    return accountRepository.save(accountEntityDTO)
-                            .map(accountConverter::toDto)
-                            .map(savedAccount -> ResponseEntity.status(HttpStatus.CREATED).body(savedAccount))
-                            .onErrorResume(e -> {
-                                logger.error("Error saving account for Customer ID: " +
-                                        "{}. Error: {}", accountEntityDTO.getCustomerId(), e.getMessage());
-                                return Mono.error(
-                                        new InternalServerErrorException("An error occurred while saving the account"));
-                            });
+                    if (type == AccountEntityDTO.AccountType.AHORRO || type == AccountEntityDTO.AccountType.CORRIENTE) {
+                        return existingAccounts.stream().noneMatch(acc -> acc.getAccountType() == type);
+                    }
+                    if (type == AccountEntityDTO.AccountType.PLAZO_FIJO) {
+                        return customerType == AccountEntityDTO.CustomerType.PERSONAL;
+                    }
+                    return false;
                 });
     }
 
@@ -145,7 +183,6 @@ public Mono<ResponseEntity<Account>> newAccount(Account account) {
                     return Mono.error(new Exception("Account not found"));
                 });
     }
-
     @Override
     public Mono<ResponseEntity<Account>> upgradeAccount(String accountId, Account updatedAccount) {
         AccountEntityDTO updatedAccountEntityDTO = accountConverter.toEntity(updatedAccount);
@@ -315,30 +352,6 @@ public Mono<ResponseEntity<Account>> newAccount(Account account) {
                 .onErrorResume(Exception.class, e -> {
                     logger.error("Unexpected error during withdrawal: {}", e.getMessage());
                     return Mono.error(new InternalServerErrorException("Error processing withdrawal"));
-                });
-    }
-
-    private Mono<Boolean> validateAccountCreation(AccountEntityDTO accountEntityDTO) {
-        return accountRepository.findByCustomerId(accountEntityDTO.getCustomerId())
-                .collectList()
-                .map(existingAccounts -> {
-                    AccountEntityDTO.AccountType accountType = accountEntityDTO.getAccountType();
-                    if (accountEntityDTO.getCustomerType() == AccountEntityDTO.CustomerType.EMPRESARIAL) {
-                        boolean hasHolders = accountEntityDTO.getHolders() != null &&
-                                !accountEntityDTO.getHolders().isEmpty();
-                        return hasHolders && accountType != AccountEntityDTO.AccountType.AHORRO && accountType
-                                != AccountEntityDTO.AccountType.PLAZO_FIJO;
-                    }
-                    if (accountType == AccountEntityDTO.AccountType.AHORRO ||
-                            accountType == AccountEntityDTO.AccountType.CORRIENTE) {
-                        boolean existsSameType = existingAccounts.stream()
-                                .anyMatch(acc -> acc.getAccountType() == accountType);
-                        return !existsSameType;
-                    }
-                    if (accountType == AccountEntityDTO.AccountType.PLAZO_FIJO) {
-                        return accountEntityDTO.getCustomerType() == AccountEntityDTO.CustomerType.PERSONAL;
-                    }
-                    return false;
                 });
     }
 
