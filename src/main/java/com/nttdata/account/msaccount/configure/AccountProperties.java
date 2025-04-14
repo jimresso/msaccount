@@ -1,8 +1,6 @@
 package com.nttdata.account.msaccount.configure;
 
-import jakarta.annotation.PostConstruct;
 import lombok.Getter;
-import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;

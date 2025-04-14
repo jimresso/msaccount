@@ -48,7 +48,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(RemoteServiceUnavailableException.class)
     @ResponseStatus(HttpStatus.SERVICE_UNAVAILABLE)
     public Map<String, String> handleRemoteServiceDown(RemoteServiceUnavailableException ex) {
-        return Collections.singletonMap("error", ex.getMessage());
+        return Collections.singletonMap(ERROR, ex.getMessage());
     }
 
 }

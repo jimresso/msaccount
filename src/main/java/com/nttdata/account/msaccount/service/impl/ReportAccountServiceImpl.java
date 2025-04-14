@@ -1,7 +1,6 @@
 package com.nttdata.account.msaccount.service.impl;
 
 
-import com.nttdata.account.msaccount.controller.AccountController;
 import com.nttdata.account.msaccount.exception.BusinessException;
 import com.nttdata.account.msaccount.model.TransactionDTO;
 import com.nttdata.account.msaccount.repository.AccountRepository;
@@ -9,7 +8,7 @@ import com.nttdata.account.msaccount.repository.TransactionRepository;
 import com.nttdata.account.msaccount.service.ReportAccountService;
 import lombok.RequiredArgsConstructor;
 
-import org.openapitools.model.ReportOperationsRequest;
+
 import org.openapitools.model.ReportOperationsResponse;
 import org.openapitools.model.ReportProductoRequest;
 import org.openapitools.model.ReportProductoResponse;
@@ -26,7 +25,7 @@ import java.time.YearMonth;
 @Service
 @RequiredArgsConstructor
 public class ReportAccountServiceImpl implements ReportAccountService {
-    private static final Logger logger = LoggerFactory.getLogger(AccountController.class);
+    private static final Logger logger = LoggerFactory.getLogger(ReportAccountServiceImpl.class);
     private final TransactionRepository transactionRepository;
     private final AccountRepository accountRepository;
     @Override

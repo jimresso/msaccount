@@ -13,7 +13,6 @@ import com.nttdata.account.msaccount.repository.ComissionRepository;
 import com.nttdata.account.msaccount.repository.TransactionRepository;
 
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -24,7 +23,6 @@ import org.openapitools.model.Account;
 
 import org.openapitools.model.DepositRequest;
 import org.openapitools.model.WithdrawRequest;
-import org.slf4j.Logger;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.TestPropertySource;
@@ -49,9 +47,6 @@ class AccountServiceImplTest {
     private AccountRepository accountRepository;
     @Mock
     private AccountConverter accountConverter;
-
-    @Mock
-    private Logger logger;
 
     @Mock
     private WebClient.Builder webClientBuilder;
@@ -837,8 +832,6 @@ class AccountServiceImplTest {
 
         TaxedTransactionLimitDTO commission = new TaxedTransactionLimitDTO();
         commission.setMonto(BigDecimal.valueOf(10.0).doubleValue());
-
-        TransactionDTO savedTransaction = new TransactionDTO();
 
         when(accountRepository.findById(accountIdDestination)).thenReturn(Mono.just(destinationAccount));
         when(accountRepository.findFirstByCustomerId(customerIdOrigin)).thenReturn(Mono.just(originAccount));

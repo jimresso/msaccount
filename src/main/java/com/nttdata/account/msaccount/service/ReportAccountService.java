@@ -1,7 +1,6 @@
 package com.nttdata.account.msaccount.service;
 
 
-import org.openapitools.model.ReportOperationsRequest;
 import org.openapitools.model.ReportOperationsResponse;
 import org.openapitools.model.ReportProductoRequest;
 import org.openapitools.model.ReportProductoResponse;

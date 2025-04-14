@@ -32,8 +32,7 @@ public class CommissionController implements CommissionApi {
             Mono<TaxedTransactionLimit> taxedTransactionLimit,
             ServerWebExchange exchange) {
         logger.info("Starting createCommission");
-        return taxedTransactionLimit.flatMap(a ->
-                commissionService.createCommission(a));
+        return taxedTransactionLimit.flatMap(commissionService::createCommission);
     }
 
     @Override

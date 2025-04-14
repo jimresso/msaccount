@@ -241,6 +241,7 @@ public class AccountServiceImpl implements AccountService {
                             return comissionRepository.findByAccountType(acountDestination .getAccountType().name())
                                     .defaultIfEmpty(new TaxedTransactionLimitDTO())
                                     .flatMap(commission -> {
+
                                         double commissionAmount = commission.getMonto() != null
                                                 ? commission.getMonto().doubleValue() : 0.0;
                                         double netAmount;
