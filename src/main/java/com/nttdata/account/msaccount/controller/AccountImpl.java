@@ -16,9 +16,9 @@ import reactor.core.publisher.Mono;
 
 @RestController
 @RequiredArgsConstructor
-public class AccountController implements ApiApi {
+public class AccountImpl implements ApiApi {
     private final AccountService accountService;
-    private static final Logger logger = LoggerFactory.getLogger(AccountController.class);
+    private static final Logger logger = LoggerFactory.getLogger(AccountImpl.class);
     @Override
     public Mono<ResponseEntity<Flux<Account>>> getAllAccounts(ServerWebExchange exchange) {
         logger.info("Starting get find all Clients");

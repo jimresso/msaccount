@@ -19,8 +19,8 @@ import reactor.core.publisher.Mono;
 
 @RestController
 @RequiredArgsConstructor
-public class ReportAccountController implements ReportApi {
-    private static final Logger logger = LoggerFactory.getLogger(ReportAccountController.class);
+public class ReportAccountImpl implements ReportApi {
+    private static final Logger logger = LoggerFactory.getLogger(ReportAccountImpl.class);
     private final ReportAccountService reportAccountService;
 
 

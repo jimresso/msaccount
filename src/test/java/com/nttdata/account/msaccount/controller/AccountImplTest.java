@@ -20,12 +20,12 @@ import static org.mockito.Mockito.when;
 
 
 @ExtendWith(MockitoExtension.class)
-class AccountControllerTest {
+class AccountImplTest {
     @Mock
     private AccountService accountService;
 
     @InjectMocks
-    private AccountController accountController;
+    private AccountImpl accountImpl;
 
     @Test
     void testGetAccountById() {
@@ -34,7 +34,7 @@ class AccountControllerTest {
         mockAccount.setId(accountId);
         ResponseEntity<Account> responseEntity = ResponseEntity.ok(mockAccount);
         when(accountService.findAccountById(accountId)).thenReturn(Mono.just(responseEntity));
-        StepVerifier.create(accountController.getAccountById(accountId, null))
+        StepVerifier.create(accountImpl.getAccountById(accountId, null))
                 .expectNext(responseEntity)
                 .verifyComplete();
         verify(accountService).findAccountById(accountId);
@@ -48,7 +48,7 @@ class AccountControllerTest {
         Flux<Account> accountsFlux = Flux.just(account1, account2);
         ResponseEntity<Flux<Account>> responseEntity = ResponseEntity.ok(accountsFlux);
         when(accountService.listAccounts()).thenReturn(Mono.just(responseEntity));
-        StepVerifier.create(accountController.getAllAccounts(null))
+        StepVerifier.create(accountImpl.getAllAccounts(null))
                 .expectNext(responseEntity)
                 .verifyComplete();
         verify(accountService).listAccounts();
@@ -59,7 +59,7 @@ class AccountControllerTest {
         account.setId("789");
         ResponseEntity<Account> responseEntity = ResponseEntity.status(HttpStatus.CREATED).body(account);
         when(accountService.newAccount(any(Account.class))).thenReturn(Mono.just(responseEntity));
-        StepVerifier.create(accountController.createAccount(Mono.just(account), null))
+        StepVerifier.create(accountImpl.createAccount(Mono.just(account), null))
                 .expectNext(responseEntity)
                 .verifyComplete();
         verify(accountService).newAccount(any(Account.class));
@@ -71,7 +71,7 @@ class AccountControllerTest {
         updatedAccount.setId(accountId);
         ResponseEntity<Account> responseEntity = ResponseEntity.ok(updatedAccount);
         when(accountService.upgradeAccount(eq(accountId), any(Account.class))).thenReturn(Mono.just(responseEntity));
-        StepVerifier.create(accountController.updateAccount(accountId, Mono.just(updatedAccount), null))
+        StepVerifier.create(accountImpl.updateAccount(accountId, Mono.just(updatedAccount), null))
                 .expectNext(responseEntity)
                 .verifyComplete();
         verify(accountService).upgradeAccount(eq(accountId), any(Account.class));
@@ -81,7 +81,7 @@ class AccountControllerTest {
         String accountId = "123";
         ResponseEntity<Void> responseEntity = ResponseEntity.noContent().build();
         when(accountService.removeAccount(accountId)).thenReturn(Mono.just(responseEntity));
-        StepVerifier.create(accountController.deleteAccount(accountId, null))
+        StepVerifier.create(accountImpl.deleteAccount(accountId, null))
                 .expectNext(responseEntity)
                 .verifyComplete();
         verify(accountService).removeAccount(accountId);

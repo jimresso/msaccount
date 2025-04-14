@@ -17,13 +17,13 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
-class CommissionControllerTest {
+class CommissionImplTest {
 
     @Mock
     private CommissionService commissionService;
 
     @InjectMocks
-    private CommissionController commissionController;
+    private CommissionImpl commissionImpl;
 
     @Test
     void testCommission_SuccessfulUpdate() {
@@ -37,7 +37,7 @@ class CommissionControllerTest {
         doReturn(Mono.just(responseEntity))
                 .when(commissionService)
                 .upgradeCommission(eq(accountType), any(TaxedTransactionLimit.class));
-        Mono<ResponseEntity<TaxedTransactionLimit>> result = commissionController.commission(accountType, inputMono, null);
+        Mono<ResponseEntity<TaxedTransactionLimit>> result = commissionImpl.commission(accountType, inputMono, null);
         StepVerifier.create(result)
                 .expectNextMatches(response ->
                         response.getStatusCode() == HttpStatus.OK &&
