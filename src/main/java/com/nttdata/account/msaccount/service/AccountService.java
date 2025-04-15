@@ -13,7 +13,8 @@ public interface AccountService {
     Mono<ResponseEntity<Void>> removeAccount(String id);
     Mono<ResponseEntity<Account>> upgradeAccount(String id, Account account);
     Mono<ResponseEntity<Flux<Account>>> listAccounts();
-
     Mono<ResponseEntity<Account>> depositAmount(String id, DepositRequest a);
-    Mono<ResponseEntity<Account>>withdrawAmount(String id, WithdrawRequest a);
+    Mono<ResponseEntity<Account>>withdrawAmount(String customerId, WithdrawRequest a);
+
+    Mono<ResponseEntity<Flux<Account>>> listAcountByDni(String dni);
 }

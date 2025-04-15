@@ -1,4 +1,4 @@
-package com.nttdata.account.msaccount.controller;
+package com.nttdata.account.msaccount.expose.web;
 
 import com.nttdata.account.msaccount.service.ReportAccountService;
 import lombok.RequiredArgsConstructor;
@@ -19,8 +19,8 @@ import reactor.core.publisher.Mono;
 
 @RestController
 @RequiredArgsConstructor
-public class ReportAccountController implements ReportApi {
-    private static final Logger logger = LoggerFactory.getLogger(ReportAccountController.class);
+public class ReportAccountImpl implements ReportApi {
+    private static final Logger logger = LoggerFactory.getLogger(ReportAccountImpl.class);
     private final ReportAccountService reportAccountService;
 
 
@@ -39,9 +39,4 @@ public class ReportAccountController implements ReportApi {
         return  reportProductoRequest.flatMap(reportAccountService::reportProduct);
     }
 
-//    @Override
-//    public Mono<ResponseEntity<Flux<ReportProductoResponse>>> reportProduct(ServerWebExchange exchange) {
-//        logger.info("Starting reportProduct");
-//        return reportAccountService.reportProduct();
-//    }
 }

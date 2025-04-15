@@ -132,14 +132,14 @@ paths:
                 $ref: "#/components/schemas/Account"
         '400':
           description: Invalid data
-  /api/accounts/{id}/withdraw:
+  /api/accounts/{customerId}/withdraw:
     put:
       summary: Withdraw amount from account
       operationId: withdraw
       tags:
         - account
       parameters:
-        - name: id
+        - name: customerId
           in: path
           required: true
           schema:
@@ -159,6 +159,31 @@ paths:
                 $ref: "#/components/schemas/Account"
         '400':
           description: Invalid data
+  /api/accounts/by-dni:
+    post:
+      summary: Search accounts by ID
+      operationId: findAccountsByDni
+      tags:
+        - account
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DniRequest'
+      responses:
+        '200':
+          description: Lista de cuentas asociadas al DNI
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Account'
+        '404':
+          description: No se encontraron cuentas para el DNI proporcionado
+        '500':
+          description: Error interno del servidor
 
   /commission/{accountType}:
     put:
@@ -396,3 +421,11 @@ components:
         endDate:
           type: string
           format: date
+    DniRequest:
+      type: object
+      properties:
+        dni:
+          type: string
+          example: "12345678"
+      required:
+        - dni

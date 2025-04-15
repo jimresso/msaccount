@@ -1,4 +1,4 @@
-package com.nttdata.account.msaccount.controller;
+package com.nttdata.account.msaccount.expose.web;
 
 import com.nttdata.account.msaccount.service.CommissionService;
 import lombok.RequiredArgsConstructor;
@@ -14,9 +14,9 @@ import reactor.core.publisher.Mono;
 
 @RestController
 @RequiredArgsConstructor
-public class CommissionController implements CommissionApi {
+public class CommissionImpl implements CommissionApi {
     private final CommissionService commissionService;
-    private static final Logger logger = LoggerFactory.getLogger(CommissionController.class);
+    private static final Logger logger = LoggerFactory.getLogger(CommissionImpl.class);
 
     @Override
     public Mono<ResponseEntity<TaxedTransactionLimit>> commission(String accountType,
@@ -32,8 +32,7 @@ public class CommissionController implements CommissionApi {
             Mono<TaxedTransactionLimit> taxedTransactionLimit,
             ServerWebExchange exchange) {
         logger.info("Starting createCommission");
-        return taxedTransactionLimit.flatMap(a ->
-                commissionService.createCommission(a));
+        return taxedTransactionLimit.flatMap(commissionService::createCommission);
     }
 
     @Override

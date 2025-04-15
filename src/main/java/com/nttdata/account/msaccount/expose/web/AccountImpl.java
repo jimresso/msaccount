@@ -1,10 +1,11 @@
-package com.nttdata.account.msaccount.controller;
+package com.nttdata.account.msaccount.expose.web;
 
 import com.nttdata.account.msaccount.service.AccountService;
 import lombok.RequiredArgsConstructor;
 import org.openapitools.api.ApiApi;
 import org.openapitools.model.Account;
 import org.openapitools.model.DepositRequest;
+import org.openapitools.model.DniRequest;
 import org.openapitools.model.WithdrawRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -16,9 +17,9 @@ import reactor.core.publisher.Mono;
 
 @RestController
 @RequiredArgsConstructor
-public class AccountController implements ApiApi {
+public class AccountImpl implements ApiApi {
     private final AccountService accountService;
-    private static final Logger logger = LoggerFactory.getLogger(AccountController.class);
+    private static final Logger logger = LoggerFactory.getLogger(AccountImpl.class);
     @Override
     public Mono<ResponseEntity<Flux<Account>>> getAllAccounts(ServerWebExchange exchange) {
         logger.info("Starting get find all Clients");
@@ -53,11 +54,18 @@ public class AccountController implements ApiApi {
     }
 
     @Override
-    public Mono<ResponseEntity<Account>> withdraw(String id ,
+    public Mono<ResponseEntity<Flux<Account>>> findAccountsByDni(Mono<DniRequest> dniRequest,
+                                                                 ServerWebExchange exchange) {
+        logger.info("Starting findAccountsByDni");
+        return dniRequest.flatMap(c -> accountService.listAcountByDni(c.getDni()));
+    }
+
+    @Override
+    public Mono<ResponseEntity<Account>> withdraw(String customerId ,
                                                   Mono<WithdrawRequest> amount,
                                                   ServerWebExchange exchange) {
-        logger.info("Starting withdraw Id: {}", id);
-        return amount.flatMap(a -> accountService.withdrawAmount(id, a));
+        logger.info("Starting withdraw Id: {}", customerId);
+        return amount.flatMap(a -> accountService.withdrawAmount(customerId, a));
     }
 
 

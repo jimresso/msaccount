@@ -1,0 +1,37 @@
+resilience4j:
+  circuitbreaker:
+    instances:
+      circuitBreakerAccount:
+        ignoreExceptions:
+          - com.nttdata.account.msaccount.exception.BusinessException
+          - com.nttdata.account.msaccount.exception.EntityNotFoundException
+          - com.nttdata.account.msaccount.exception.InsufficientFundsException
+        slidingWindowSize: 10
+        failureRateThreshold: 50
+        permittedNumberOfCallsInHalfOpenState: 3
+        minimumNumberOfCalls: 3
+        waitDurationInOpenState: 5s
+        automaticTransitionFromOpenToHalfOpenEnabled: true
+        registerHealthIndicator: true
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,circuitbreakerevents
+  endpoint:
+    health:
+      show-details: always
+
+spring:
+  mail:
+    host: smtp.gmail.com
+    port: 587
+    username: jimresso@gmail.com
+    password: gadl tzmr hvcg ryaw
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true

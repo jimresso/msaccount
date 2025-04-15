@@ -1,10 +1,12 @@
 package com.nttdata.account.msaccount;
 
+import com.nttdata.account.msaccount.configure.AccountProperties;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
-import org.springframework.context.annotation.ComponentScan;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
 
 @SpringBootApplication
+@EnableConfigurationProperties(AccountProperties.class)
 public class MsaccountApplication {
 
 	public static void main(String[] args) {

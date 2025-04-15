@@ -3,8 +3,10 @@ package com.nttdata.account.msaccount.exception;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -43,4 +45,10 @@ public class GlobalExceptionHandler {
     public ResponseEntity<String> handleInsufficientFundsException(InsufficientFundsException ex) {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ex.getMessage());
     }
+    @ExceptionHandler(RemoteServiceUnavailableException.class)
+    @ResponseStatus(HttpStatus.SERVICE_UNAVAILABLE)
+    public Map<String, String> handleRemoteServiceDown(RemoteServiceUnavailableException ex) {
+        return Collections.singletonMap(ERROR, ex.getMessage());
+    }
+
 }

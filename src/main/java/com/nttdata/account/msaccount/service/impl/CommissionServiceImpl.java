@@ -1,7 +1,6 @@
 package com.nttdata.account.msaccount.service.impl;
 
 import com.nttdata.account.msaccount.exception.BusinessException;
-import com.nttdata.account.msaccount.exception.InsufficientFundsException;
 import com.nttdata.account.msaccount.mapper.ComissionConverter;
 import com.nttdata.account.msaccount.repository.ComissionRepository;
 import com.nttdata.account.msaccount.service.CommissionService;
@@ -25,7 +24,9 @@ public class CommissionServiceImpl implements CommissionService {
     @Override
     public Mono<ResponseEntity<Void>> deleteCommission(String id) {
         return comissionRepository.findById(id)
-                .flatMap(existingAccount -> comissionRepository.delete(existingAccount)
+                .flatMap(existingAccount ->
+
+                        comissionRepository.delete(existingAccount)
                         .doOnSuccess(unused -> logger.info("Account with ID {} successfully deleted", id))
                         .thenReturn(ResponseEntity.noContent().<Void>build()))
                 .switchIfEmpty(Mono.fromRunnable(() -> logger.warn("Account with ID {} not found", id))
