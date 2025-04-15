@@ -1,4 +1,4 @@
-package com.nttdata.account.msaccount.controller;
+package com.nttdata.account.msaccount.expose.web;
 
 import com.nttdata.account.msaccount.service.AccountService;
 import org.junit.jupiter.api.Test;

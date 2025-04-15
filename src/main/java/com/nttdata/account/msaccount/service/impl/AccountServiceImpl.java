@@ -148,22 +148,23 @@ public class AccountServiceImpl implements AccountService {
                 });
     }
     private Mono<Boolean> validateAccountCreation(AccountEntityDTO dto) {
-        return accountRepository.findByCustomerId(dto.getCustomerId())
+        return accountRepository.findByDni(dto.getDni())
                 .collectList()
                 .map(existingAccounts -> {
-                    var type = dto.getAccountType();
-                    var customerType = dto.getCustomerType();
-
+                    AccountEntityDTO.AccountType type = dto.getAccountType();
+                    AccountEntityDTO.CustomerType customerType = dto.getCustomerType();
                     if (customerType == AccountEntityDTO.CustomerType.EMPRESARIAL) {
                         boolean hasHolders = dto.getHolders() != null && !dto.getHolders().isEmpty();
-                        return hasHolders && type != AccountEntityDTO.AccountType.AHORRO
-                                && type != AccountEntityDTO.AccountType.PLAZO_FIJO;
+                        return hasHolders && type == AccountEntityDTO.AccountType.CORRIENTE;
                     }
-                    if (type == AccountEntityDTO.AccountType.AHORRO || type == AccountEntityDTO.AccountType.CORRIENTE) {
-                        return existingAccounts.stream().noneMatch(acc -> acc.getAccountType() == type);
-                    }
-                    if (type == AccountEntityDTO.AccountType.PLAZO_FIJO) {
-                        return customerType == AccountEntityDTO.CustomerType.PERSONAL;
+                    if (customerType == AccountEntityDTO.CustomerType.PERSONAL) {
+                        if (type == AccountEntityDTO.AccountType.AHORRO || type == AccountEntityDTO.AccountType.CORRIENTE) {
+                            return existingAccounts.stream()
+                                    .noneMatch(acc -> acc.getAccountType() == type);
+                        }
+                        if (type == AccountEntityDTO.AccountType.PLAZO_FIJO) {
+                            return true;
+                        }
                     }
                     return false;
                 });
@@ -353,6 +354,18 @@ public class AccountServiceImpl implements AccountService {
                 .onErrorResume(Exception.class, e -> {
                     logger.error("Unexpected error during withdrawal: {}", e.getMessage());
                     return Mono.error(new InternalServerErrorException("Error processing withdrawal"));
+                });
+    }
+
+    @Override
+    public Mono<ResponseEntity<Flux<Account>>> listAcountByDni(String dni) {
+        return accountRepository.findByDni(dni)
+                .map(accountConverter::toDto)
+                .collectList()
+                .flatMap(accounts -> Mono.just(ResponseEntity.ok(Flux.fromIterable(accounts))))
+                .onErrorResume(e -> {
+                    logger.error("Error retrieving accounts: {}", e.getMessage());
+                    return Mono.error(new BusinessException("An error occurred while retrieving accounts"));
                 });
     }
 

@@ -1,10 +1,11 @@
-package com.nttdata.account.msaccount.controller;
+package com.nttdata.account.msaccount.expose.web;
 
 import com.nttdata.account.msaccount.service.AccountService;
 import lombok.RequiredArgsConstructor;
 import org.openapitools.api.ApiApi;
 import org.openapitools.model.Account;
 import org.openapitools.model.DepositRequest;
+import org.openapitools.model.DniRequest;
 import org.openapitools.model.WithdrawRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -50,6 +51,13 @@ public class AccountImpl implements ApiApi {
     public Mono<ResponseEntity<Account>> deposit(String id , Mono<DepositRequest> amount, ServerWebExchange exchange) {
         logger.info("Starting deposit Id: {}", id);
         return amount.flatMap(a -> accountService.depositAmount(id, a));
+    }
+
+    @Override
+    public Mono<ResponseEntity<Flux<Account>>> findAccountsByDni(Mono<DniRequest> dniRequest,
+                                                                 ServerWebExchange exchange) {
+        logger.info("Starting findAccountsByDni");
+        return dniRequest.flatMap(c -> accountService.listAcountByDni(c.getDni()));
     }
 
     @Override
